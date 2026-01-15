@@ -2,6 +2,18 @@
 
 The stable, reusable foundation for the ezAnsi AI edge computing platform. This repository contains the core orchestration, discovery, and composition infrastructure that enables independent AI capabilities to work together seamlessly.
 
+## Status
+
+**Phase 1** ✓ Complete - Base Ollama capability deployed and tested
+**Phase 2** → In Progress - Building platform orchestration layer
+**Phase 3** → Planned - Full composition and orchestration
+
+## Getting Started
+
+- New to the project? Start with [Deployment Guide](docs/deployment-guide.md)
+- Want to build on platform-core? See [Phase 2 Architecture](docs/phase-2-architecture/)
+- Looking for the LLM capability? See [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama)
+
 ## Architecture Overview
 
 The platform is built on a **LEGO brick model**:
