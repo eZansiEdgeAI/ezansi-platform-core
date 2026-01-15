@@ -114,76 +114,12 @@ Update this repo when:
 - Integration tests with real capabilities
 - Performance testing on target hardware (Raspberry Pi)
 
-## Deployment & Portability
-
-### Moving Containers Between Machines
-
-You can deploy fully-loaded containers to any Linux system with Podman. Choose the approach that fits your needs:
-
-#### Option 1: Export & Import (Single Machine Transfer)
-
-For transferring a fully-loaded container to another machine:
-
-```bash
-# On source machine - save the container image
-podman save <image-name>:latest -o <image-name>-image.tar
-
-# Transfer the file to target machine
-scp <image-name>-image.tar user@raspberrypi:/home/user/
-
-# On target machine - load and run
-podman load -i <image-name>-image.tar
-podman run -d <image-name>:latest
-```
-
-**Best for:** Air-gapped systems, Raspberry Pi deployments, one-off transfers
-**Trade-off:** Large file size (5-10GB+ with pre-loaded models), slower transfer
-
-#### Option 2: Container Registry (Multiple Machines)
-
-For deploying to multiple systems efficiently:
-
-```bash
-# On source machine
-podman tag <image-name>:latest myregistry.com/<image-name>:latest
-podman push myregistry.com/<image-name>:latest
-
-# On any target machine
-podman pull myregistry.com/<image-name>:latest
-podman run -d myregistry.com/<image-name>:latest
-```
-
-**Best for:** Fleet deployments, multiple Raspberry Pis, CI/CD pipelines
-**Trade-off:** Requires a registry (Docker Hub, Podman registry, etc.)
-
-#### Option 3: Rebuild on Target (Optimized)
-
-Copy the `Containerfile` and build locally on the target system:
-
-```bash
-# Transfer Containerfile and config
-scp -r <capability-repo> user@raspberrypi:
-
-# On target machine
-cd <capability-repo>
-podman build -t <image-name>:latest .
-podman run -d <image-name>:latest
-```
-
-**Best for:** Optimizing for target architecture, minimal initial transfer, bandwidth-constrained environments
-**Trade-off:** Slower first startup (models download/compile on target)
-
-### Cross-Architecture Considerations
-
-- **x86 → ARM (Raspberry Pi):** Use Option 3 (rebuild) for best compatibility
-- **ARM → ARM (Pi 4 → Pi 5):** Options 1-2 work well, same architecture
-- **Mixed fleet:** Use Option 2 (registry) with multi-architecture builds
-
 ## Quick Links
 
 - [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama) - First capability (reference implementation)
 - [Capability Contract Specification](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama/blob/main/docs/capability-contract-spec.md)
 - [Architecture Deep Dive](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama/blob/main/docs/architecture.md)
+- [Deployment & Portability Guide](docs/deployment-guide.md)
 
 ## License
 
