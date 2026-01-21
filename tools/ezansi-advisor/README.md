@@ -8,7 +8,7 @@ It reads a stack blueprint (pattern) and checks whether the required capability 
 
 ```bash
 cd tools/ezansi-advisor
-podman build -t localhost/ezansi-advisor:0.1.0 -f Containerfile .
+podman build -t localhost/ezansi-advisor:0.1.2 -f Containerfile .
 ```
 
 ## Run
@@ -23,11 +23,30 @@ cd /path/to/ezansi-platform-core
 podman run --rm --network=host \
   -v "$PWD:/work" \
   -v "/path/to/ezansi-blueprints:/blueprints:ro" \
-  localhost/ezansi-advisor:0.1.0 \
+  localhost/ezansi-advisor:0.1.2 \
   --platform http://localhost:8000 \
   --blueprint /blueprints/blueprints/student-knowledge-rag.yml \
   --emit-capability-request /work/capability-request.json \
   --print-steps
+
+# Optional: print a runnable bash script that pipes retrieval output into {retrieved_context}
+podman run --rm --network=host \
+  -v "/path/to/ezansi-blueprints:/blueprints:ro" \
+  localhost/ezansi-advisor:0.1.2 \
+  --platform http://localhost:8000 \
+  --blueprint /blueprints/blueprints/student-knowledge-rag.yml \
+  --print-runner > run-blueprint.sh
+
+# Verified one-liner (emit runner and execute it)
+podman run --rm --network host \
+  -v "/path/to/ezansi-blueprints:/blueprints:ro" \
+  localhost/ezansi-advisor:0.1.2 \
+  --platform http://localhost:8000 \
+  --blueprint /blueprints/blueprints/student-knowledge-rag.yml \
+  --print-runner > /tmp/run-blueprint.sh \
+  && bash /tmp/run-blueprint.sh
+
+bash run-blueprint.sh
 ```
 
 Notes:
