@@ -14,12 +14,18 @@ podman build -t localhost/ezansi-advisor:0.1.0 -f Containerfile .
 ## Run
 
 ```bash
+# One-time (or if you don't already have the blueprints repo locally)
+git clone https://github.com/eZansiEdgeAI/ezansi-blueprints.git
+
+# From this repo root
 cd /path/to/ezansi-platform-core
+
 podman run --rm --network=host \
   -v "$PWD:/work" \
+  -v "/path/to/ezansi-blueprints:/blueprints:ro" \
   localhost/ezansi-advisor:0.1.0 \
   --platform http://localhost:8000 \
-  --blueprint /work/../ezansi-blueprints/blueprints/student-knowledge-rag.yml \
+  --blueprint /blueprints/blueprints/student-knowledge-rag.yml \
   --emit-capability-request /work/capability-request.json \
   --print-steps
 ```
