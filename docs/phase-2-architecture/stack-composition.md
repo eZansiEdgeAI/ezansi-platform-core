@@ -20,6 +20,8 @@ A blueprint is a small, versioned document that lists:
 
 Blueprints are intentionally kept **outside** platform-core so different stacks (student tutor, voice assistant, admin console) can reuse the same pattern.
 
+In this workspace, blueprints live in the separate repository `ezansi-blueprints`.
+
 ## Advisor / Intent Layer
 
 An optional external advisor can translate free-text goals into blueprint requirements:

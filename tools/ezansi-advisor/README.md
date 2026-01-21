@@ -14,12 +14,13 @@ podman build -t localhost/ezansi-advisor:0.1.0 -f Containerfile .
 ## Run
 
 ```bash
+cd /path/to/ezansi-platform-core
 podman run --rm --network=host \
-  -v /home/mcfuzzysquirrel/Projects/eZansiEdgeAI/ezansi-platform-core/examples:/examples:ro \
+  -v "$PWD:/work" \
   localhost/ezansi-advisor:0.1.0 \
   --platform http://localhost:8000 \
-  --blueprint /examples/stack-student-rag.yml \
-  --emit-capability-request /examples/capability-request.json \
+  --blueprint /work/../ezansi-blueprints/blueprints/student-knowledge-rag.yml \
+  --emit-capability-request /work/capability-request.json \
   --print-steps
 ```
 

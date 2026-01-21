@@ -55,19 +55,19 @@ Capability Endpoint (Ollama, Whisper, etc.)
 ```
 ezansi-platform-core/
 ├── src/
-│   ├── registry.py            # Capability discovery
-│   ├── router.py              # Request routing
-│   ├── validator.py           # Resource checking
-│   └── gateway.py             # HTTP server
+│   └── ezansi_platform_core/
+│       ├── registry.py        # Capability discovery
+│       ├── router.py          # Request routing
+│       ├── validator.py       # Resource checking
+│       └── app.py             # FastAPI gateway
 ├── config/
 │   └── device-constraints.json
-├── examples/
-│   ├── stack-voice-assistant.yml
-│   └── stack-document-qa.yml
+├── tools/
+│   └── ezansi-advisor/         # External advisor (optional)
 ├── tests/
 ├── docs/
 │   └── phase-2-architecture/  # This directory
-└── docker-compose.yml         # Run everything
+└── podman-compose.yml         # Run everything
 ```
 
 ## Next Steps

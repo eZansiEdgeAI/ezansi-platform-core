@@ -132,7 +132,7 @@ See [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capabi
 - ✅ Type-based request routing (`POST /` with `{type, payload}`)
 - ✅ Resource validation for stacks (`POST /validate/stack`)
 - ⏳ Background health monitoring + richer routing transforms
-- ⏳ Stack composition blueprints + advisor layer (kept outside platform-core)
+- ⏳ Stack composition blueprints + advisor layer (kept outside platform-core; see `ezansi-blueprints`)
 
 This is intentionally minimal. The platform grows only when capabilities need platform features.
 
