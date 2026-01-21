@@ -11,6 +11,13 @@ cd tools/ezansi-advisor
 podman build -t localhost/ezansi-advisor:0.1.2 -f Containerfile .
 ```
 
+Or using the Makefile:
+
+```bash
+cd tools/ezansi-advisor
+make build TAG=0.1.2
+```
+
 ## Run
 
 ```bash
@@ -47,6 +54,18 @@ podman run --rm --network host \
   && bash /tmp/run-blueprint.sh
 
 bash run-blueprint.sh
+```
+
+Or using the Makefile:
+
+```bash
+cd tools/ezansi-advisor
+
+# Set this once for your machine
+export BLUEPRINTS_DIR=/path/to/ezansi-blueprints
+
+make run-steps TAG=0.1.2 PLATFORM=http://localhost:8000
+make run-runner TAG=0.1.2 PLATFORM=http://localhost:8000
 ```
 
 Notes:
