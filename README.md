@@ -14,6 +14,23 @@ The stable, reusable foundation for the ezAnsi AI edge computing platform. This 
 - Want to build on platform-core? See [Phase 2 Architecture](docs/phase-2-architecture/)
 - Looking for the LLM capability? See [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama)
 
+### Quickstart (runs the gateway)
+
+This repository now includes a minimal runnable gateway (registry + router + validation) intended for early stack demos.
+
+```bash
+cd ezansi-platform-core
+podman-compose up -d
+
+# Verify
+curl -fsS http://localhost:8000/health
+curl -fsS http://localhost:8000/registry
+```
+
+By default the gateway scans `./capabilities/**/capability.json` (mounted into the container as `/capabilities`).
+
+If capability contracts use `http://localhost:<port>`, the gateway can still reach host-published capability ports via `config/overrides.yaml` (enabled by default via `OVERRIDES_PATH`).
+
 ## Architecture Overview
 
 The platform is built on a **LEGO brick model**:
@@ -58,16 +75,10 @@ All capabilities follow a standardized interface defined in `capability.json`. T
 
 ```json
 {
-  "name": "ollama",
-  "version": "1.0.0",
+  "name": "ollama-llm",
+  "version": "1.0",
   "provides": ["text-generation"],
-  "api": {
-    "generate": {
-      "method": "POST",
-      "path": "/api/generate",
-      "input": {"prompt": "string", "stream": "boolean"}
-    }
-  },
+  "api": {"endpoint": "http://localhost:11434", "health_check": "/api/tags"},
   "resources": {
     "ram_mb": 6000,
     "cpu_cores": 4
@@ -83,13 +94,13 @@ See [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capabi
 
 ## Current Status
 
-**v1.0.0 (Minimal/Stable)**
-- ✅ Capability contract specification
-- 🟡 Registry (file-based discovery)
-- 🟡 Request router (basic orchestration)
-- ⏳ Resource manager
-- ⏳ Health monitoring
-- ⏳ Stack composition engine
+**v0.1.0 (Demo-ready core)**
+- ✅ Minimal API gateway (FastAPI)
+- ✅ File-based registry discovery (`capability.json` scanning)
+- ✅ Type-based request routing (`POST /` with `{type, payload}`)
+- ✅ Resource validation for stacks (`POST /validate/stack`)
+- ⏳ Background health monitoring + richer routing transforms
+- ⏳ Stack composition blueprints + advisor layer (kept outside platform-core)
 
 This is intentionally minimal. The platform grows only when capabilities need platform features.
 

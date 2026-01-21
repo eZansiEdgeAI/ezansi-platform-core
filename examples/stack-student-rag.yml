@@ -1,0 +1,75 @@
+# Student Knowledge RAG (blueprint)
+#
+# This is a stack *blueprint*, not a deployment file.
+# It describes required capability service types (`provides`) and the minimal
+# request flow a stack can run *through platform-core*.
+
+id: student-knowledge-rag
+version: 0.1.0
+name: Student Knowledge RAG
+
+requires_types:
+  - vector-search
+  - text-generation
+
+optional_types:
+  - embedding
+
+defaults:
+  collection: student
+  top_k: 3
+  llm_model: tinyllama
+
+flow:
+  - step: ingest
+    description: Ingest learning content into retrieval capability.
+    platform_request:
+      type: vector-search
+      payload:
+        endpoint: ingest
+        params:
+          collection: "{collection}"
+        json:
+          documents:
+            - id: "doc-1"
+              text: "Photosynthesis is the process by which plants convert light into chemical energy."
+              metadata:
+                subject: biology
+                grade: 8
+
+  - step: retrieve
+    description: Query relevant context.
+    platform_request:
+      type: vector-search
+      payload:
+        endpoint: query
+        params:
+          collection: "{collection}"
+        json:
+          query: "What is photosynthesis?"
+          top_k: 3
+
+  - step: answer
+    description: Build a prompt using retrieved context, then ask LLM.
+    platform_request:
+      type: text-generation
+      payload:
+        endpoint: generate
+        json:
+          model: "{llm_model}"
+          prompt: |
+            You are a helpful tutor.
+            Use the context below to answer the question.
+
+            Context:
+            {retrieved_context}
+
+            Question:
+            What is photosynthesis?
+
+            Answer:
+          stream: false
+
+notes:
+  - Stacks should call platform-core only (type-based routing), not the capabilities directly.
+  - Retrieval is API-only; clients should not talk to ChromaDB directly.

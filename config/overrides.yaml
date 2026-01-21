@@ -1,0 +1,23 @@
+# Endpoint overrides for platform-core
+#
+# Use this to keep capability contracts portable (often `http://localhost:<port>`)
+# while allowing the platform gateway (running in a container) to reach services.
+#
+# Common demo pattern:
+# - Capabilities expose ports on the host
+# - Platform runs in a container
+# - Platform reaches host ports via host.containers.internal
+
+capabilities:
+  ollama-llm:
+    endpoint: http://host.containers.internal:11434
+    health_check: /api/tags
+
+  chromadb-retrieval:
+    endpoint: http://host.containers.internal:8801
+    health_check: /health
+
+provides_aliases:
+  # Normalize older/alternate names to the standard taxonomy.
+  # Example: chromadb-retrieval advertises `text-embeddings` today.
+  text-embeddings: embedding

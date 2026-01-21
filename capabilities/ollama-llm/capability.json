@@ -1,0 +1,16 @@
+{
+  "name": "ollama-llm",
+  "version": "1.0",
+  "description": "Local LLM capability powered by Ollama. Provides text generation for prompt-based AI tasks.",
+  "provides": ["text-generation"],
+  "api": {
+    "endpoint": "http://localhost:11434",
+    "type": "REST",
+    "health_check": "/api/tags"
+  },
+  "endpoints": {
+    "generate": {"method": "POST", "path": "/api/generate", "input": "application/json", "output": "application/json"},
+    "tags": {"method": "GET", "path": "/api/tags", "input": "none", "output": "application/json"}
+  },
+  "resources": {"ram_mb": 6000, "cpu_cores": 4, "storage_mb": 8000}
+}

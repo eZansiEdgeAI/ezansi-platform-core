@@ -1,0 +1,21 @@
+{
+  "name": "chromadb-retrieval",
+  "version": "1.0.0",
+  "type": "capability",
+  "description": "Vector search + ingestion backed by a stack-local ChromaDB server, with embeddings generated via this capability API.",
+  "provides": ["vector-search", "text-embeddings"],
+  "requires": [],
+  "api": {
+    "endpoint": "http://localhost:8801",
+    "type": "REST",
+    "health_check": "/health"
+  },
+  "endpoints": {
+    "health": {"method": "GET", "path": "/health", "input": "none", "output": "application/json"},
+    "capability": {"method": "GET", "path": "/.well-known/capability.json", "input": "none", "output": "application/json"},
+    "ingest": {"method": "POST", "path": "/collections/{collection}/documents", "input": "application/json", "output": "application/json"},
+    "query": {"method": "POST", "path": "/collections/{collection}/query", "input": "application/json", "output": "application/json"},
+    "embeddings": {"method": "POST", "path": "/embeddings", "input": "application/json", "output": "application/json"}
+  },
+  "resources": {"ram_mb": 1500, "cpu_cores": 2, "storage_mb": 2000, "accelerator": "none"}
+}

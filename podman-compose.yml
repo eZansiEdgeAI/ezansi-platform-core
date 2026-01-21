@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  platform-core:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: ezansi-platform-core
+    environment:
+      PORT: "8000"
+      LOG_LEVEL: "INFO"
+      REGISTRY_PATH: "/capabilities"
+      CONSTRAINTS_PATH: "/app/config/device-constraints.json"
+      OVERRIDES_PATH: "/app/config/overrides.yaml"
+      CACHE_TTL_SECONDS: "10"
+      STRICT_MODE: "true"
+      HTTP_TIMEOUT_SECONDS: "30"
+    volumes:
+      # Mount capability contracts here. For demo usage, mount a folder that contains
+      # subfolders with capability.json files.
+      - ./capabilities:/capabilities:ro
+    ports:
+      - "8000:8000"

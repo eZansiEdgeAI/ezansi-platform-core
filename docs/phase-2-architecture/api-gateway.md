@@ -84,6 +84,8 @@ Response: {
 }
 ```
 
+The implementation supports `GET /status?refresh=true` to actively re-check capability health and mark unavailable capabilities as `unhealthy`.
+
 ### Registry Endpoints
 
 ```

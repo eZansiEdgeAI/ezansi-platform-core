@@ -1,0 +1,6 @@
+{
+  "device": "Development Machine",
+  "cpu": {"cores": 4, "frequency_ghz": 2.4},
+  "memory": {"total_mb": 16384, "available_mb": 12000, "reserved_mb": 2000},
+  "storage": {"total_mb": 128000, "available_mb": 80000}
+}
