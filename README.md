@@ -71,7 +71,11 @@ All capabilities follow a standardized interface defined in `capability.json`. T
   "resources": {
     "ram_mb": 6000,
     "cpu_cores": 4
-  }
+  },
+
+  "target_platforms": ["Raspberry Pi 4/5", "AMD64 (x86-64)"],
+  "supported_architectures": ["arm64", "amd64"],
+  "target_platform": "Raspberry Pi 4/5"
 }
 ```
 

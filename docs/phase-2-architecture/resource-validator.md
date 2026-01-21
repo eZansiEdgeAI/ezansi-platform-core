@@ -54,6 +54,8 @@ Each capability declares what it needs in `capability.json`:
 }
 ```
 
+Other optional contract fields (like `target_platform`, `target_platforms`, and `supported_architectures`) are treated as informational metadata and MUST NOT affect resource validation.
+
 ## Validation Logic
 
 ### Single Capability

@@ -37,9 +37,19 @@ Each capability provides a `capability.json` that declares:
   "container": {
     "image": "docker.io/ollama/ollama",
     "port": 11434
-  }
+  },
+
+  // Optional metadata (informational)
+  // Prefer these for multi-target capabilities.
+  "target_platforms": ["Raspberry Pi 4/5", "AMD64 (x86-64)"],
+  "supported_architectures": ["arm64", "amd64"],
+
+  // Optional (deprecated): older single-target field, kept for backwards compatibility.
+  "target_platform": "Raspberry Pi 4/5"
 }
 ```
+
+The registry should treat `target_platform`, `target_platforms`, and `supported_architectures` as optional and non-blocking. These fields are useful for UI/selection and documentation, but discovery and routing should not depend on them.
 
 ### Discovery Method
 
