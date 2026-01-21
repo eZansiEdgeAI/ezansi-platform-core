@@ -31,6 +31,38 @@ By default the gateway scans `./capabilities/**/capability.json` (mounted into t
 
 If capability contracts use `http://localhost:<port>`, the gateway can still reach host-published capability ports via `config/overrides.yaml` (enabled by default via `OVERRIDES_PATH`).
 
+### Managing containers with Podman (start/stop)
+
+`podman-compose up -d` is the easiest way to create the containers the first time (networks, volumes, env wiring).
+After they exist, you can start/stop them directly with Podman:
+
+```bash
+# Start (existing containers)
+podman start \
+  ezansi-platform-core \
+  chromadb-retrieval-chroma \
+  chromadb-retrieval-capability \
+  ollama-llm-capability
+
+# Stop
+podman stop -t 10 \
+  ezansi-platform-core \
+  chromadb-retrieval-capability \
+  chromadb-retrieval-chroma \
+  ollama-llm-capability
+```
+
+If you prefer not to rely on container names, you can also target containers created by `podman-compose` using the compose project label:
+
+```bash
+# Start everything created by a compose project
+podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-platform-core)
+podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-capability-llm-ollama)
+podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-capability-retrieval-chromadb)
+```
+
+Note: `--restart=unless-stopped` helps with unexpected restarts, but for guaranteed “start on boot” use systemd user services.
+
 ## Architecture Overview
 
 The platform is built on a **LEGO brick model**:

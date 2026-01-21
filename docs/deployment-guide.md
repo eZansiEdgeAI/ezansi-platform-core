@@ -30,6 +30,36 @@ curl -fsS 'http://localhost:8000/status?refresh=true'
 The gateway runs on port `8000` and discovers capability contracts by scanning `REGISTRY_PATH` (defaults to `/capabilities` inside the container).
 By default, `podman-compose.yml` mounts `./capabilities` into the container.
 
+### Starting/stopping (after first run)
+
+Use `podman-compose up -d` to create the containers the first time. After that, you can start/stop them directly via Podman.
+
+```bash
+# Start existing containers
+podman start \
+	ezansi-platform-core \
+	chromadb-retrieval-chroma \
+	chromadb-retrieval-capability \
+	ollama-llm-capability
+
+# Stop existing containers
+podman stop -t 10 \
+	ezansi-platform-core \
+	chromadb-retrieval-capability \
+	chromadb-retrieval-chroma \
+	ollama-llm-capability
+```
+
+If you prefer to target compose-managed containers by project label:
+
+```bash
+podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-platform-core)
+podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-capability-llm-ollama)
+podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-capability-retrieval-chromadb)
+```
+
+For guaranteed “start on boot”, generate systemd user units from containers/pods.
+
 ## Deploying Capabilities with the Platform
 
 Capabilities are discovered automatically via the registry. Deploy them independently:
