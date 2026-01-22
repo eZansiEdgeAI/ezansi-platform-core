@@ -121,10 +121,11 @@ def test_settings(temp_capabilities_dir, temp_constraints_file):
     return Settings(
         port=8000,
         log_level="INFO",
-        registry_path=temp_capabilities_dir,
-        constraints_path=temp_constraints_file,
+        registry_path=Path(temp_capabilities_dir),
+        constraints_path=Path(temp_constraints_file),
         overrides_path=None,
         registry_cache_ttl_seconds=1,
+        health_check_interval_seconds=10,
         strict_validation=True,
         http_timeout_seconds=5
     )
@@ -136,10 +137,11 @@ def pi5_settings(temp_capabilities_dir, pi5_constraints_file):
     return Settings(
         port=8000,
         log_level="INFO",
-        registry_path=temp_capabilities_dir,
-        constraints_path=pi5_constraints_file,
+        registry_path=Path(temp_capabilities_dir),
+        constraints_path=Path(pi5_constraints_file),
         overrides_path=None,
         registry_cache_ttl_seconds=1,
+        health_check_interval_seconds=10,
         strict_validation=True,
         http_timeout_seconds=5
     )
