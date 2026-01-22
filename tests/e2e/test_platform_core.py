@@ -12,7 +12,6 @@ import pytest
 
 @pytest.mark.e2e
 class TestPlatformHealth:
-class TestPlatformHealth:
     """Test platform health and basic operations."""
     
     def test_platform_starts_successfully(self, client):

@@ -58,7 +58,9 @@ class TestRaspberryPi5Constraints:
         - Vector DB: 2000 MB RAM + 2 cores + 5000 MB storage
         - Total: 8000 MB RAM, 4-6 cores, 13000 MB storage
         
-        This should fit on Pi5 8GB variant.
+        Pi5 8GB has 6000 MB available memory. With strict_validation=False,
+        this test validates that the platform can report compatibility status
+        even when resources are tight (not checking strict headroom requirements).
         """
         payload = {
             "types": ["text-generation", "vector-search"]
