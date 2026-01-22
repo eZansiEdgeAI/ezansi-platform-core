@@ -8,10 +8,10 @@ These tests validate the basic platform operations:
 - Resource validation
 """
 import pytest
-from fastapi.testclient import TestClient
 
 
 @pytest.mark.e2e
+class TestPlatformHealth:
 class TestPlatformHealth:
     """Test platform health and basic operations."""
     
