@@ -116,6 +116,12 @@ Created device constraint files for Raspberry Pi 5:
    - 4096 MB total RAM, 3000 MB available
    - 64 GB storage
 
+3. **Pi5 16GB** (`config/device-constraints-pi5-16gb.json`)
+   - 4 CPU cores @ 2.4 GHz
+   - 16384 MB total RAM, 14000 MB available
+   - 64 GB storage
+   - Provides significantly more headroom for complex capability stacks
+
 ### Test Coverage
 
 **Overall Coverage**: 66%

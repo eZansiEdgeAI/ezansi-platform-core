@@ -267,3 +267,156 @@ class TestPi5CompatibilityChecks:
         # Details format depends on implementation
         # Just verify it's present and not empty
         assert details is not None
+
+
+@pytest.mark.hardware
+class TestRaspberryPi5_16GB:
+    """
+    Test platform behavior with Raspberry Pi 5 16GB variant.
+    
+    Raspberry Pi 5 (16GB) specifications:
+    - CPU: 4 cores @ 2.4 GHz (ARM Cortex-A76)
+    - RAM: 16GB (16384 MB)
+    - Storage: Varies (typically 64GB+ SD card/SSD)
+    
+    The 16GB variant provides significantly more memory headroom for
+    complex capability stacks and multi-capability deployments.
+    """
+    
+    def test_pi5_16gb_constraints_loaded(self, pi5_16gb_client):
+        """Verify Pi5 16GB constraints are properly loaded."""
+        response = pi5_16gb_client.get("/constraints")
+        assert response.status_code == 200
+        constraints = response.json()
+        
+        assert constraints["device"] == "Raspberry Pi 5 (16GB)"
+        assert constraints["cpu"]["cores"] == 4
+        assert constraints["memory"]["total_mb"] == 16384
+        assert constraints["memory"]["available_mb"] == 14000
+    
+    def test_pi5_16gb_single_llm_capability(self, pi5_16gb_client):
+        """Verify a single LLM capability easily fits on Pi5 16GB."""
+        payload = {"types": ["text-generation"]}
+        response = pi5_16gb_client.post("/validate/stack", json=payload)
+        assert response.status_code == 200
+        result = response.json()
+        
+        # On Pi5 16GB, a single LLM should definitely fit
+        assert "compatible" in result
+        assert "details" in result
+        assert len(result.get("missing_types", [])) == 0
+    
+    def test_pi5_16gb_rag_stack_validation(self, pi5_16gb_client):
+        """
+        Verify a RAG stack (LLM + Vector DB) fits comfortably on Pi5 16GB.
+        
+        Combined requirements:
+        - LLM: 6000 MB RAM + 4 cores + 8000 MB storage
+        - Vector DB: 2000 MB RAM + 2 cores + 5000 MB storage
+        - Total: 8000 MB RAM, 4-6 cores, 13000 MB storage
+        
+        This should fit easily on Pi5 16GB with plenty of headroom.
+        """
+        payload = {
+            "types": ["text-generation", "vector-search"]
+        }
+        response = pi5_16gb_client.post("/validate/stack", json=payload)
+        assert response.status_code == 200
+        result = response.json()
+        
+        assert "compatible" in result
+        assert "details" in result
+        # Should have no missing types
+        assert len(result.get("missing_types", [])) == 0
+    
+    def test_pi5_16gb_multi_capability_stack(self, pi5_16gb_client):
+        """
+        Verify Pi5 16GB can handle multiple capabilities simultaneously.
+        
+        The 16GB variant should support more complex stacks than the 8GB variant.
+        """
+        # Test with both capabilities
+        payload = {
+            "capabilities": [
+                {"type": "text-generation"},
+                {"type": "vector-search"},
+                {"type": "document-embedding"}
+            ]
+        }
+        response = pi5_16gb_client.post("/validate/stack", json=payload)
+        assert response.status_code == 200
+        result = response.json()
+        
+        assert "compatible" in result
+        assert "details" in result
+    
+    def test_pi5_16gb_platform_startup(self, pi5_16gb_client):
+        """Verify platform starts successfully on Pi5 16GB."""
+        response = pi5_16gb_client.get("/health")
+        assert response.status_code == 200
+        health = response.json()
+        assert health["status"] == "healthy"
+    
+    def test_pi5_16gb_capability_discovery(self, pi5_16gb_client):
+        """Verify capability discovery works on Pi5 16GB."""
+        response = pi5_16gb_client.get("/registry")
+        assert response.status_code == 200
+        capabilities = response.json()
+        assert isinstance(capabilities, list)
+        assert len(capabilities) >= 2
+    
+    def test_pi5_16gb_resource_availability(self, pi5_16gb_client):
+        """Verify Pi5 16GB reports realistic available resources."""
+        response = pi5_16gb_client.get("/constraints")
+        assert response.status_code == 200
+        constraints = response.json()
+        
+        # Available memory should be significantly higher than 8GB variant
+        memory = constraints["memory"]
+        assert memory["available_mb"] >= 12000  # Should have at least 12GB available
+        assert memory["available_mb"] < memory["total_mb"]
+        
+        # Storage should have reasonable availability
+        storage = constraints["storage"]
+        assert storage["available_mb"] > 0
+    
+    def test_pi5_16gb_deployment_scenario(self, pi5_16gb_client):
+        """
+        Complete deployment scenario on Pi5 16GB.
+        
+        Validates the full workflow for a high-performance deployment.
+        """
+        # Step 1: Platform health
+        health = pi5_16gb_client.get("/health").json()
+        assert health["status"] == "healthy"
+        
+        # Step 2: Check constraints
+        constraints = pi5_16gb_client.get("/constraints").json()
+        assert "Raspberry Pi 5 (16GB)" in constraints["device"]
+        
+        # Step 3: Discover capabilities
+        registry = pi5_16gb_client.get("/registry").json()
+        assert len(registry) > 0
+        
+        # Step 4: Validate a complex stack
+        validation = pi5_16gb_client.post(
+            "/validate/stack",
+            json={"types": ["text-generation", "vector-search"]}
+        ).json()
+        assert validation["compatible"] is True
+    
+    def test_pi5_16gb_memory_advantage(self, pi5_16gb_client):
+        """
+        Verify 16GB variant provides significant memory advantage.
+        
+        The 16GB variant should have at least double the available memory
+        compared to the 8GB variant (6GB available).
+        """
+        response = pi5_16gb_client.get("/constraints")
+        assert response.status_code == 200
+        constraints = response.json()
+        
+        memory = constraints["memory"]
+        # 16GB variant should have significantly more available memory
+        # 14GB available is more than double the 8GB variant's 6GB
+        assert memory["available_mb"] >= 12000

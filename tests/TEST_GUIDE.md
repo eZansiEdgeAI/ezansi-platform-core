@@ -46,11 +46,12 @@ pytest tests/scenarios/test_role_based.py -v -m scenario
 
 Validates platform behavior on Raspberry Pi 5:
 
-- ✅ Pi5 resource constraint validation
+- ✅ Pi5 resource constraint validation (4GB, 8GB, and 16GB variants)
 - ✅ Single capability deployment (LLM)
 - ✅ Multi-capability stack (RAG: LLM + Vector DB)
 - ✅ Realistic workload scenarios
 - ✅ Resource limit handling
+- ✅ Pi5 16GB advanced capability stacks
 
 **Run with:**
 ```bash
@@ -180,7 +181,7 @@ This test simulates: Setup → Discovery → Validation → Execution
 
 ### Prerequisites
 
-- Raspberry Pi 5 (4GB or 8GB variant)
+- Raspberry Pi 5 (4GB, 8GB, or 16GB variant)
 - Podman installed and configured
 - Sufficient storage (64GB+ recommended)
 
@@ -212,10 +213,24 @@ This test simulates: Setup → Discovery → Validation → Execution
    pytest tests/scenarios/test_role_based.py -v
    ```
 
-### Expected Results on Pi5 8GB
+### Expected Results by Pi5 Variant
 
+#### Pi5 4GB
+- ⚠️ Single LLM capability: May be tight
+- ❌ RAG stack (LLM + Vector DB): May exceed memory limits
+- ✅ Platform startup: < 5 seconds
+- ✅ Capability discovery: < 1 second
+
+#### Pi5 8GB
 - ✅ Single LLM capability: Compatible
 - ✅ RAG stack (LLM + Vector DB): Compatible (tight fit)
+- ✅ Platform startup: < 5 seconds
+- ✅ Capability discovery: < 1 second
+
+#### Pi5 16GB
+- ✅ Single LLM capability: Compatible (plenty of headroom)
+- ✅ RAG stack (LLM + Vector DB): Compatible (comfortable fit)
+- ✅ Complex multi-capability stacks: Compatible
 - ✅ Platform startup: < 5 seconds
 - ✅ Capability discovery: < 1 second
 

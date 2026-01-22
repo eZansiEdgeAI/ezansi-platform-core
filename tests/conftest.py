@@ -116,6 +116,23 @@ def pi5_constraints_file():
 
 
 @pytest.fixture
+def pi5_16gb_constraints_file():
+    """Create Raspberry Pi 5 16GB device constraints file."""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        # Raspberry Pi 5 specs: 16GB variant
+        constraints = {
+            "device": "Raspberry Pi 5 (16GB)",
+            "cpu": {"cores": 4, "frequency_ghz": 2.4},
+            "memory": {"total_mb": 16384, "available_mb": 14000, "reserved_mb": 1500},
+            "storage": {"total_mb": 64000, "available_mb": 50000}
+        }
+        json.dump(constraints, f)
+        f.flush()
+        yield f.name
+    os.unlink(f.name)
+
+
+@pytest.fixture
 def test_settings(temp_capabilities_dir, temp_constraints_file):
     """Create test settings with temporary paths."""
     return Settings(
@@ -148,6 +165,22 @@ def pi5_settings(temp_capabilities_dir, pi5_constraints_file):
 
 
 @pytest.fixture
+def pi5_16gb_settings(temp_capabilities_dir, pi5_16gb_constraints_file):
+    """Create test settings with Pi5 16GB constraints."""
+    return Settings(
+        port=8000,
+        log_level="INFO",
+        registry_path=Path(temp_capabilities_dir),
+        constraints_path=Path(pi5_16gb_constraints_file),
+        overrides_path=None,
+        registry_cache_ttl_seconds=1,
+        health_check_interval_seconds=10,
+        strict_validation=True,
+        http_timeout_seconds=5
+    )
+
+
+@pytest.fixture
 def app(test_settings):
     """Create FastAPI app instance with test settings."""
     return create_app(test_settings)
@@ -163,4 +196,11 @@ def client(app):
 def pi5_client(pi5_settings):
     """Create test client with Pi5 constraints."""
     app = create_app(pi5_settings)
+    return TestClient(app)
+
+
+@pytest.fixture
+def pi5_16gb_client(pi5_16gb_settings):
+    """Create test client with Pi5 16GB constraints."""
+    app = create_app(pi5_16gb_settings)
     return TestClient(app)

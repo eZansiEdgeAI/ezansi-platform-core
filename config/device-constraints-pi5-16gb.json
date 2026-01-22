@@ -1,0 +1,24 @@
+{
+  "device": "Raspberry Pi 5 (16GB)",
+  "cpu": {
+    "cores": 4,
+    "frequency_ghz": 2.4,
+    "architecture": "ARM Cortex-A76"
+  },
+  "memory": {
+    "total_mb": 16384,
+    "available_mb": 14000,
+    "reserved_mb": 1500
+  },
+  "storage": {
+    "total_mb": 64000,
+    "available_mb": 50000
+  },
+  "notes": [
+    "Raspberry Pi 5 16GB variant configuration",
+    "Reserved memory accounts for OS and system services",
+    "Storage assumes 64GB SD card or SSD with ~14GB used",
+    "Available memory may vary based on OS configuration",
+    "16GB variant provides significantly more headroom for complex capability stacks"
+  ]
+}
