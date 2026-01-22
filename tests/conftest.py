@@ -5,7 +5,6 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Dict, Any
 
 import pytest
 from fastapi.testclient import TestClient
