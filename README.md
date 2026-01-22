@@ -169,9 +169,30 @@ Update this repo when:
 
 ### Testing
 
-- Unit tests for platform components
-- Integration tests with real capabilities
-- Performance testing on target hardware (Raspberry Pi)
+The platform includes a comprehensive end-to-end test suite covering:
+
+- **Core Platform Tests**: Health checks, discovery, routing, validation
+- **Role-Based Scenarios**: Developer, user, admin, and integration workflows
+- **Hardware-Specific Tests**: Raspberry Pi 5 deployment validation
+- **Integration Tests**: Multi-capability composition
+
+**Quick Start:**
+```bash
+# Install test dependencies
+pip install -r requirements-test.txt
+
+# Run all tests
+pytest -v
+
+# Run specific categories
+pytest -v -m e2e           # Core platform tests
+pytest -v -m scenario      # Role-based scenarios
+pytest -v -m hardware      # Pi5 hardware tests
+```
+
+**Continuous Integration**: Tests run automatically on all PRs via GitHub Actions.
+
+**For detailed testing documentation, see [Test Guide](tests/TEST_GUIDE.md)**
 
 ## Quick Links
 
