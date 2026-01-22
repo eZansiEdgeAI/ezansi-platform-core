@@ -1,0 +1,23 @@
+{
+  "device": "Raspberry Pi 5 (8GB)",
+  "cpu": {
+    "cores": 4,
+    "frequency_ghz": 2.4,
+    "architecture": "ARM Cortex-A76"
+  },
+  "memory": {
+    "total_mb": 8192,
+    "available_mb": 6000,
+    "reserved_mb": 1000
+  },
+  "storage": {
+    "total_mb": 64000,
+    "available_mb": 50000
+  },
+  "notes": [
+    "Raspberry Pi 5 8GB variant configuration",
+    "Reserved memory accounts for OS and system services",
+    "Storage assumes 64GB SD card or SSD with ~14GB used",
+    "Available memory may vary based on OS configuration"
+  ]
+}
