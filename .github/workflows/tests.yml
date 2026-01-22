@@ -61,6 +61,7 @@ jobs:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
+        # token: ${{ secrets.CODECOV_TOKEN }}  # Optional: Add CODECOV_TOKEN secret for private repos
       continue-on-error: true
 
     - name: Archive test results

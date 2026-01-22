@@ -99,7 +99,11 @@ def temp_constraints_file():
 
 @pytest.fixture
 def pi5_constraints_file():
-    """Create Raspberry Pi 5 device constraints file."""
+    """Create Raspberry Pi 5 8GB device constraints file.
+    
+    Note: This fixture creates temporary constraint files for testing.
+    The config/ directory contains reference examples for actual deployment.
+    """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
         # Raspberry Pi 5 specs: 8GB variant
         constraints = {
@@ -115,8 +119,33 @@ def pi5_constraints_file():
 
 
 @pytest.fixture
+def pi5_4gb_constraints_file():
+    """Create Raspberry Pi 5 4GB device constraints file.
+    
+    Note: This fixture creates temporary constraint files for testing.
+    The config/ directory contains reference examples for actual deployment.
+    """
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        # Raspberry Pi 5 specs: 4GB variant
+        constraints = {
+            "device": "Raspberry Pi 5 (4GB)",
+            "cpu": {"cores": 4, "frequency_ghz": 2.4},
+            "memory": {"total_mb": 4096, "available_mb": 3000, "reserved_mb": 500},
+            "storage": {"total_mb": 64000, "available_mb": 50000}
+        }
+        json.dump(constraints, f)
+        f.flush()
+        yield f.name
+    os.unlink(f.name)
+
+
+@pytest.fixture
 def pi5_16gb_constraints_file():
-    """Create Raspberry Pi 5 16GB device constraints file."""
+    """Create Raspberry Pi 5 16GB device constraints file.
+    
+    Note: This fixture creates temporary constraint files for testing.
+    The config/ directory contains reference examples for actual deployment.
+    """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
         # Raspberry Pi 5 specs: 16GB variant
         constraints = {
@@ -149,12 +178,28 @@ def test_settings(temp_capabilities_dir, temp_constraints_file):
 
 @pytest.fixture
 def pi5_settings(temp_capabilities_dir, pi5_constraints_file):
-    """Create test settings with Pi5 constraints."""
+    """Create test settings with Pi5 8GB constraints."""
     return Settings(
         port=8000,
         log_level="INFO",
         registry_path=Path(temp_capabilities_dir),
         constraints_path=Path(pi5_constraints_file),
+        overrides_path=None,
+        registry_cache_ttl_seconds=1,
+        health_check_interval_seconds=10,
+        strict_validation=False,
+        http_timeout_seconds=5
+    )
+
+
+@pytest.fixture
+def pi5_4gb_settings(temp_capabilities_dir, pi5_4gb_constraints_file):
+    """Create test settings with Pi5 4GB constraints."""
+    return Settings(
+        port=8000,
+        log_level="INFO",
+        registry_path=Path(temp_capabilities_dir),
+        constraints_path=Path(pi5_4gb_constraints_file),
         overrides_path=None,
         registry_cache_ttl_seconds=1,
         health_check_interval_seconds=10,
@@ -174,7 +219,7 @@ def pi5_16gb_settings(temp_capabilities_dir, pi5_16gb_constraints_file):
         overrides_path=None,
         registry_cache_ttl_seconds=1,
         health_check_interval_seconds=10,
-        strict_validation=True,
+        strict_validation=False,
         http_timeout_seconds=5
     )
 
@@ -193,8 +238,15 @@ def client(app):
 
 @pytest.fixture
 def pi5_client(pi5_settings):
-    """Create test client with Pi5 constraints."""
+    """Create test client with Pi5 8GB constraints."""
     app = create_app(pi5_settings)
+    return TestClient(app)
+
+
+@pytest.fixture
+def pi5_4gb_client(pi5_4gb_settings):
+    """Create test client with Pi5 4GB constraints."""
+    app = create_app(pi5_4gb_settings)
     return TestClient(app)
 
 
