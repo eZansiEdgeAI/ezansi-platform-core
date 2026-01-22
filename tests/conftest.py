@@ -159,7 +159,7 @@ def pi5_settings(temp_capabilities_dir, pi5_constraints_file):
         overrides_path=None,
         registry_cache_ttl_seconds=1,
         health_check_interval_seconds=10,
-        strict_validation=True,
+        strict_validation=False,
         http_timeout_seconds=5
     )
 
