@@ -5,3 +5,12 @@ __pycache__/
 .vscode/
 .env
 .DS_Store
+
+# Testing
+.coverage
+htmlcov/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
