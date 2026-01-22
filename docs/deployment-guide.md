@@ -139,7 +139,8 @@ scp -r ezansi-platform-core user@host:
 
 # Redeploy on target
 cd ezansi-platform-core
-# No rebuild needed - platform is universal
+# On a cold start, build the container image locally
+podman-compose up -d --build
 ```
 
 ## Cross-Architecture Considerations

@@ -11,7 +11,8 @@ The stable, reusable foundation for the ezAnsi AI edge computing platform. This 
 ## Getting Started
 
 - New to the project? Start with [Deployment Guide](docs/deployment-guide.md)
-- Want to build on platform-core? See [Phase 2 Architecture](docs/phase-2-architecture/)
+- Want a cold-start, beginner-friendly manual E2E? See [End-to-End Testing Guide](tests/TEST_GUIDE.md)
+- Want to build on platform-core? See [Docs](docs/README.md) (start with [Architecture](docs/architecture.md))
 - Looking for the LLM capability? See [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama)
 
 ### Quickstart (runs the gateway)

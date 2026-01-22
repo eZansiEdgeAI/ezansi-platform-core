@@ -29,5 +29,5 @@ NOTE:
 
 - Example retrieval call:
   curl -sS -X POST "$PLATFORM_BASE_URL/" -H 'Content-Type: application/json' \
-    -d '{"type":"vector-search","payload":{"path":"/collections/student/query","json":{"query":"What is ...?","top_k":3}}}'
+    -d '{"type":"vector-search","payload":{"endpoint":"query","params":{"collection":"student"},"json":{"query":"What is ...?","top_k":3}}}'
 NOTE

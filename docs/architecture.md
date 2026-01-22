@@ -1,20 +1,16 @@
-# Phase 2: Platform Core Architecture
+# Platform Core Architecture
 
-This directory contains the detailed design for Phase 2 development of the eZansiEdgeAI platform.
-
-## Overview
-
-Phase 2 builds the orchestration layer (`ezansi-platform-core`) that discovers and composes multiple capabilities into learning stacks.
+This document describes the platform-core architecture: discovery, validation, and routing of capability requests.
 
 ## Components
 
-- **[Capability Registry](capability-registry.md)** - Auto-discovers and catalogs capabilities
-- **[Request Router](request-router.md)** - Routes requests to appropriate capability
-- **[Resource Validator](resource-validator.md)** - Validates device constraints
-- **[API Gateway](api-gateway.md)** - Single entry point for all requests
-- **[Stack Composition](stack-composition.md)** - How to create and deploy capability stacks
+- **[Capability registry](capability-registry.md)** — auto-discovers and catalogs capabilities
+- **[Request router](request-router.md)** — routes requests to the selected capability
+- **[Resource validator](resource-validator.md)** — validates device constraints
+- **[API gateway](api-gateway.md)** — single entry point for all requests
+- **[Stack composition](stack-composition.md)** — how stacks compose capabilities via platform-core
 
-## Quick Architecture
+## High-level flow
 
 ```
 Client Request
@@ -47,35 +43,22 @@ Client Request
 │ • Transform response         │
 └────────┬─────────────────────┘
     ↓
-Capability Endpoint (Ollama, Whisper, etc.)
+Capability Endpoint (Ollama, ChromaDB, ...)
 ```
 
-## File Structure
+## File structure (core pieces)
 
 ```
 ezansi-platform-core/
 ├── src/
 │   └── ezansi_platform_core/
-│       ├── registry.py        # Capability discovery
-│       ├── router.py          # Request routing
-│       ├── validator.py       # Resource checking
+│       ├── registry.py        # capability discovery
+│       ├── router.py          # request routing
+│       ├── validator.py       # resource checking
 │       └── app.py             # FastAPI gateway
 ├── config/
-│   └── device-constraints.json
 ├── tools/
-│   └── ezansi-advisor/         # External advisor (optional)
 ├── tests/
 ├── docs/
-│   └── phase-2-architecture/  # This directory
-└── podman-compose.yml         # Run everything
+└── podman-compose.yml
 ```
-
-## Next Steps
-
-1. **Design Review** - Validate architecture with team
-2. **Implementation** - Build registry, router, validator, gateway
-3. **Testing** - Unit and integration tests
-4. **Integration** - Wire with existing capabilities
-5. **Documentation** - User and developer guides
-
-See [Development Roadmap](../../docs/development-roadmap.md) for full Phase 2 plan.
