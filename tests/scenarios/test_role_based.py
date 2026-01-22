@@ -8,7 +8,6 @@ These tests simulate different user roles interacting with the platform:
 - Integration: Composing multiple capabilities
 """
 import pytest
-from fastapi.testclient import TestClient
 
 
 @pytest.mark.scenario
