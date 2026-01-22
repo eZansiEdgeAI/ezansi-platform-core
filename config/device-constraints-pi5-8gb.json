@@ -18,6 +18,6 @@
     "Raspberry Pi 5 8GB variant configuration",
     "Reserved memory accounts for OS and system services",
     "Storage assumes 64GB SD card or SSD with ~14GB used",
-    "Available memory may vary based on OS configuration"
-  ]
+    "Available memory may vary based on OS configuration",
+    "This configuration file is a reference example; the test suite uses temporary constraint files defined in fixtures instead of this file."
 }
