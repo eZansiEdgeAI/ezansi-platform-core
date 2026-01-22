@@ -5,9 +5,6 @@ These tests validate platform behavior on Raspberry Pi 5 hardware,
 including resource constraint validation and performance considerations.
 """
 import pytest
-from fastapi.testclient import TestClient
-
-
 @pytest.mark.hardware
 class TestRaspberryPi5Constraints:
     """
