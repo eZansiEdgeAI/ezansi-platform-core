@@ -14,7 +14,7 @@ tests/
 ├── TEST_GUIDE.md               # Comprehensive testing guide
 ├── e2e/
 │   ├── test_platform_core.py   # Core platform tests (17 tests)
-│   └── test_pi5_hardware.py    # Pi5 hardware tests (14 tests)
+│   └── test_pi5_hardware.py    # Pi5 hardware tests (23 tests)
 └── scenarios/
     └── test_role_based.py       # Role-based scenarios (11 tests)
 ```
