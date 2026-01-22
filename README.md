@@ -1,206 +1,122 @@
 # ezansi-platform-core
 
-The stable, reusable foundation for the ezAnsi AI edge computing platform. This repository contains the core orchestration, discovery, and composition infrastructure that enables independent AI capabilities to work together seamlessly.
+Platform Core is the “baseplate” for eZansiEdgeAI: a small HTTP gateway that lets teachers and students snap AI “capability” services together like LEGO bricks and run them as repeatable classroom/lab stacks on edge devices (e.g., Raspberry Pi).
 
-## Status
+## What this is (LEGO bricks for learning)
 
-**Phase 1** ✓ Complete - Base Ollama capability deployed and tested
-**Phase 2** → In Progress - Building platform orchestration layer
-**Phase 3** → Planned - Full composition and orchestration
+**Mental model:**
 
-## Getting Started
+- **Capabilities = LEGO bricks** (LLM, retrieval, TTS, etc.)
+- **Contracts = the studs** (each brick declares what it provides in `capability.json`)
+- **Blueprints = the instructions** (how you combine bricks into a stack)
+- **Platform Core = the baseplate/gateway** (discovers bricks + routes requests)
 
-- New to the project? Start with [Deployment Guide](docs/deployment-guide.md)
-- Want a cold-start, beginner-friendly manual E2E? See [End-to-End Testing Guide](tests/TEST_GUIDE.md)
-- Want to build on platform-core? See [Docs](docs/README.md) (start with [Architecture](docs/architecture.md))
-- Looking for the LLM capability? See [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama)
+**What problem does this solve?**
 
-### Quickstart (runs the gateway)
+In a lab/classroom, you don’t want every student project hard-coding ports, URLs, and provider-specific request formats. Platform Core gives you one stable entry point and does discovery + routing from contracts, so you can swap bricks without rewriting clients.
 
-This repository now includes a minimal runnable gateway (registry + router + validation) intended for early stack demos.
+**What’s the benefit to you?**
+
+- One stable endpoint for the whole class: `http://localhost:8000`
+- Less “glue code” in student projects; more time experimenting
+- Repeatable cold-start workflow with Podman/podman-compose
+
+If you want the bigger picture, see [docs/stack-composition.md](docs/stack-composition.md) (blueprints) and [docs/architecture.md](docs/architecture.md) (diagram).
+
+## Start here
+
+If you’re new to the concept, do this first:
+
+- Manual cold-start E2E (recommended): [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md)
+
+Then explore:
+
+- Deployment details: [docs/deployment-guide.md](docs/deployment-guide.md)
+- Design docs: [docs/README.md](docs/README.md)
+
+## What you get
+
+- A gateway on `http://localhost:8000`
+- File-based discovery of capability contracts from `./capabilities/**/capability.json`
+- Request routing via `POST /` using `{ "type": ..., "payload": ... }`
+- Stack validation via `POST /validate/stack`
+
+## Quickstart (gateway only)
+
+This starts just the platform gateway. For a full “LLM + retrieval” demo stack, use the manual E2E guide above.
 
 ```bash
 cd ezansi-platform-core
-podman-compose up -d
+podman-compose up -d --build
 
 # Verify
 curl -fsS http://localhost:8000/health
 curl -fsS http://localhost:8000/registry
 ```
 
-By default the gateway scans `./capabilities/**/capability.json` (mounted into the container as `/capabilities`).
+Notes:
 
-If capability contracts use `http://localhost:<port>`, the gateway can still reach host-published capability ports via `config/overrides.yaml` (enabled by default via `OVERRIDES_PATH`).
+- By default the gateway mounts `./capabilities` into the container as `/capabilities`.
+- If capability contracts use `http://localhost:<port>`, the gateway can still reach host-published capability ports via `config/overrides.yaml` (enabled by default via `OVERRIDES_PATH`).
 
-### Managing containers with Podman (start/stop)
+## Full demo stack (recommended)
 
-`podman-compose up -d` is the easiest way to create the containers the first time (networks, volumes, env wiring).
-After they exist, you can start/stop them directly with Podman:
+To run a real end-to-end flow (capabilities + platform-core gateway), follow:
 
-```bash
-# Start (existing containers)
-podman start \
-  ezansi-platform-core \
-  chromadb-retrieval-chroma \
-  chromadb-retrieval-capability \
-  ollama-llm-capability
+- [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md)
 
-# Stop
-podman stop -t 10 \
-  ezansi-platform-core \
-  chromadb-retrieval-capability \
-  chromadb-retrieval-chroma \
-  ollama-llm-capability
+That guide includes:
+
+- cold start (build/pull images)
+- bring up Ollama + ChromaDB Retrieval
+- copy contracts into `./capabilities`
+- run `./scripts/smoke-test.sh`
+- execute one real LLM and retrieval request through the gateway
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+	U[You\n(curl / app)] -->|HTTP| G[Platform Core Gateway\nFastAPI :8000]
+
+	C[Capability contracts\n./capabilities/**/capability.json] --> R[Capability Registry\n(discovery + catalog)]
+	G --> R
+	R --> RT[Request Router\n(select provider + proxy)]
+
+	RT -->|provider: llm| O[Ollama capability service]
+	RT -->|provider: retrieval| RC[ChromaDB Retrieval capability service]
+	RC --> CH[(ChromaDB)]
+
+	subgraph Podman / podman-compose
+		G
+		O
+		RC
+		CH
+	end
 ```
 
-If you prefer not to rely on container names, you can also target containers created by `podman-compose` using the compose project label:
+In practice:
 
-```bash
-# Start everything created by a compose project
-podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-platform-core)
-podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-capability-llm-ollama)
-podman start $(podman ps -aq --filter label=io.podman.compose.project=ezansi-capability-retrieval-chromadb)
-```
+- `podman-compose up -d --build` starts the gateway (and capabilities in the full stack)
+- You copy/mount capability contracts into `./capabilities/` so the registry can discover them
+- You send all requests to the gateway (`POST /`), and it routes to the right capability
 
-Note: `--restart=unless-stopped` helps with unexpected restarts, but for guaranteed “start on boot” use systemd user services.
+## How it works (1 minute)
 
-## Architecture Overview
+- Capabilities are separate repos/services that declare what they provide in `capability.json`.
+- Platform Core scans contracts, builds a registry, and routes `POST /` requests to the selected provider.
+- The router prefers `payload.endpoint` (a named endpoint from the contract) rather than hard-coded paths.
 
-The platform is built on a **LEGO brick model**:
-- **Platform Core** (this repo): Stable foundation, rarely changes
-- **Capabilities** (separate repos): Pluggable AI services (LLM, STT, TTS, Vision, etc.)
-- **Experience Stacks** (composed): User-facing applications combining multiple capabilities
+If you want the deeper design docs, start at [docs/README.md](docs/README.md).
 
-### Three-Layer Design
+## Testing (optional)
 
-```
-┌─────────────────────────────────────┐
-│  Experience Stacks                  │  Composed applications (voice assistant, etc.)
-│  (voice-assistant, chat-ui, etc)    │
-└────────────────┬────────────────────┘
-                 │
-┌────────────────▼────────────────────┐
-│  Platform Core (this repo)          │  Orchestration, discovery, routing
-│  - Registry                         │
-│  - Capability Loader                │
-│  - Request Router                   │
-│  - Resource Manager                 │
-└────────────────┬────────────────────┘
-                 │
-┌────────────────▼────────────────────┐
-│  Capabilities (separate repos)      │  Independent, replaceable modules
-│  - ollama (LLM)                     │
-│  - whisper (STT)                    │
-│  - piper (TTS)                      │
-│  - vision (Image processing)        │
-└─────────────────────────────────────┘
-```
+Automated tests are documented in [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md). For most users, the manual cold-start E2E is the fastest way to validate the concept.
 
-## Capability Contract
+## Related repos
 
-All capabilities follow a standardized interface defined in `capability.json`. This enables the platform to:
-- Discover what each capability provides
-- Validate resource requirements before deployment
-- Route requests to the appropriate service
-- Compose multiple capabilities into workflows
-
-### Example Capability Contract
-
-```json
-{
-  "name": "ollama-llm",
-  "version": "1.0",
-  "provides": ["text-generation"],
-  "api": {"endpoint": "http://localhost:11434", "health_check": "/api/tags"},
-  "resources": {
-    "ram_mb": 6000,
-    "cpu_cores": 4
-  },
-
-  "target_platforms": ["Raspberry Pi 4/5", "AMD64 (x86-64)"],
-  "supported_architectures": ["arm64", "amd64"],
-  "target_platform": "Raspberry Pi 4/5"
-}
-```
-
-See [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama) for a complete implementation.
-
-## Current Status
-
-**v0.1.0 (Demo-ready core)**
-- ✅ Minimal API gateway (FastAPI)
-- ✅ File-based registry discovery (`capability.json` scanning)
-- ✅ Type-based request routing (`POST /` with `{type, payload}`)
-- ✅ Resource validation for stacks (`POST /validate/stack`)
-- ⏳ Background health monitoring + richer routing transforms
-- ⏳ Stack composition blueprints + advisor layer (kept outside platform-core; see `ezansi-blueprints`)
-
-This is intentionally minimal. The platform grows only when capabilities need platform features.
-
-## When to Update Platform-Core
-
-Update this repo when:
-- Multiple capabilities reveal a common platform need
-- Contract specification needs refinement (discovered through real-world capability testing)
-- Platform bugs are discovered
-- New composition patterns emerge
-- Testing reveals platform limitations
-
-**Do NOT update when:**
-- Adding new capabilities (they should work with existing platform)
-- Building capability-specific features (stay in capability repo)
-- Just keeping pace with capability development
-
-## Development Guidelines
-
-### Adding a New Capability
-
-1. Create separate repo: `ezansi-capability-<name>-<service>`
-2. Implement `capability.json` contract following the spec
-3. Containerize with Podman
-4. Include deployment docs, health checks, test suite
-5. Platform auto-discovers it via registry
-
-### Updating Platform Features
-
-1. Only if **multiple capabilities need it**
-2. Design against the capability contract, not specific implementations
-3. Keep breaking changes minimal
-4. Update all existing capabilities' documentation
-
-### Testing
-
-The platform includes a comprehensive end-to-end test suite covering:
-
-- **Core Platform Tests**: Health checks, discovery, routing, validation
-- **Role-Based Scenarios**: Developer, user, admin, and integration workflows
-- **Hardware-Specific Tests**: Raspberry Pi 5 deployment validation
-- **Integration Tests**: Multi-capability composition
-
-**Quick Start:**
-```bash
-# Install test dependencies
-pip install -r requirements-test.txt
-
-# Run all tests
-pytest -v
-
-# Run specific categories
-pytest -v -m e2e           # Core platform tests
-pytest -v -m scenario      # Role-based scenarios
-pytest -v -m hardware      # Pi5 hardware tests
-```
-
-**Continuous Integration**: Tests run automatically on all PRs via GitHub Actions.
-
-**For detailed testing documentation, see [Test Guide](tests/TEST_GUIDE.md)**
-
-## Quick Links
-
-- [ezansi-capability-llm-ollama](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama) - First capability (reference implementation)
-- [Capability Contract Specification](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama/blob/main/docs/capability-contract-spec.md)
-- [Architecture Deep Dive](https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama/blob/main/docs/architecture.md)
-- [Deployment & Portability Guide](docs/deployment-guide.md)
+- LLM capability: https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama
+- Retrieval capability: https://github.com/eZansiEdgeAI/ezansi-capability-retrieval-chromadb
 
 ## License
 

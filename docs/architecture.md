@@ -10,6 +10,28 @@ This document describes the platform-core architecture: discovery, validation, a
 - **[API gateway](api-gateway.md)** — single entry point for all requests
 - **[Stack composition](stack-composition.md)** — how stacks compose capabilities via platform-core
 
+## Architecture diagram (Mermaid)
+
+```mermaid
+flowchart LR
+    U[Client\n(curl / app)] -->|HTTP| G[API Gateway\nFastAPI :8000]
+
+    C[Capability contracts\n./capabilities/**/capability.json] --> R[Capability Registry\n(discovery + catalog)]
+    G --> R
+    R --> RT[Request Router\n(select provider + proxy)]
+
+    RT -->|provider: llm| O[Ollama capability]
+    RT -->|provider: retrieval| RC[ChromaDB Retrieval capability]
+    RC --> CH[(ChromaDB)]
+
+    subgraph Podman / podman-compose
+        G
+        O
+        RC
+        CH
+    end
+```
+
 ## High-level flow
 
 ```

@@ -2,6 +2,16 @@
 
 This folder contains operational and design documentation for `ezansi-platform-core`.
 
+## Mental model (LEGO bricks for learning)
+
+If you’re a teacher/lecturer or student, think of the system like LEGO:
+
+- **Capabilities = LEGO bricks** (LLM, retrieval, etc.)
+- **`capability.json` = the studs** (what each brick provides)
+- **Platform Core = the baseplate/gateway** (discovers bricks and routes requests)
+
+Start with the cold-start walkthrough: [tests/TEST_GUIDE.md](../tests/TEST_GUIDE.md)
+
 ## Quick links
 
 - [Deployment guide](deployment-guide.md)
