@@ -122,8 +122,8 @@ Start Ollama (pulls `docker.io/ollama/ollama`):
 
 ```bash
 cd ezansi-capability-llm-ollama
-podman-compose up -d
-./scripts/pull-model.sh mistral
+podman-compose -f podman-compose.[your-hardware].yml up -d # example: podman-compose -f podman.compose.pi5.yml up -d
+./scripts/pull-model.sh mistral # or any other model you want to use
 ```
 
 Start Retrieval (pulls `docker.io/chromadb/chroma:0.5.20` and builds the capability API image):
