@@ -36,7 +36,7 @@ Steps:
    ./scripts/choose-compose.sh --models
 
    # Pull a model to test with
-   ./scripts/pull-model.sh mistral
+   ./scripts/pull-model.sh
    ```
 
 2. Start Retrieval (ChromaDB):

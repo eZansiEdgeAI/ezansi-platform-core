@@ -58,7 +58,7 @@ cd ezansi-capability-llm-ollama
 ./scripts/choose-compose.sh --models
 
 # Pull a model to test with
-./scripts/pull-model.sh mistral
+./scripts/pull-model.sh
 ```
 
 Start Retrieval (pulls `docker.io/chromadb/chroma:0.5.20` and builds the capability API image):
