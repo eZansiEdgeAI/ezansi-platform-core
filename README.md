@@ -27,7 +27,7 @@ If you want the bigger picture, see [docs/stack-composition.md](docs/stack-compo
 
 If you’re new to the concept, do this first:
 
-- Manual cold-start E2E (recommended): [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md)
+- Manual cold-start E2E (recommended): [docs/cold-start-walkthrough.md](docs/cold-start-walkthrough.md)
 
 Then explore:
 
@@ -63,7 +63,7 @@ Notes:
 
 To run a real end-to-end flow (capabilities + platform-core gateway), follow:
 
-- [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md)
+- [docs/cold-start-walkthrough.md](docs/cold-start-walkthrough.md)
 
 That guide includes:
 
@@ -111,7 +111,9 @@ If you want the deeper design docs, start at [docs/README.md](docs/README.md).
 
 ## Testing (optional)
 
-Automated tests are documented in [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md). For most users, the manual cold-start E2E is the fastest way to validate the concept.
+Manual cold-start walkthrough: [docs/cold-start-walkthrough.md](docs/cold-start-walkthrough.md)
+
+Automated tests (pytest): [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md)
 
 ## Related repos
 
