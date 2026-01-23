@@ -24,7 +24,16 @@ Steps:
 1. Start Ollama:
    ```bash
    cd ../ezansi-capability-llm-ollama
-   podman-compose up -d
+   # Preflight: recommends the right compose preset for your device
+   ./scripts/choose-compose.sh
+
+   # Start the stack using the recommended preset
+   ./scripts/choose-compose.sh --run
+
+   # Optional: see recommended models for your device
+   ./scripts/choose-compose.sh --models
+
+   # Pull a model to test with
    ./scripts/pull-model.sh mistral
    ```
 
@@ -122,8 +131,17 @@ Start Ollama (pulls `docker.io/ollama/ollama`):
 
 ```bash
 cd ezansi-capability-llm-ollama
-podman-compose -f podman-compose.[your-hardware].yml up -d # example: podman-compose -f podman.compose.pi5.yml up -d
-./scripts/pull-model.sh mistral # or any other model you want to use
+# Preflight: recommends the right compose preset for your device
+./scripts/choose-compose.sh
+
+# Start the stack using the recommended preset
+./scripts/choose-compose.sh --run
+
+# Optional: see recommended models for your device
+./scripts/choose-compose.sh --models
+
+# Pull a model to test with
+./scripts/pull-model.sh mistral
 ```
 
 Start Retrieval (pulls `docker.io/chromadb/chroma:0.5.20` and builds the capability API image):
