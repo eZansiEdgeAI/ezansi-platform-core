@@ -1,0 +1,48 @@
+# Approved capability catalog for orchestration tools.
+#
+# This file is consumed by external tooling (e.g., blueprint runners), not by
+# the platform-core runtime.
+#
+# Conventions:
+# - capability_id is the stable contract "name".
+# - types are the service types this capability provides.
+# - repo is the approved eZansiEdgeAI repo URL.
+# - default_ref may be a moving branch like "main" (latest).
+# - start delegates to the capability repo's selector/preflight scripts.
+
+capabilities:
+  - capability_id: ollama-llm
+    types:
+      - text-generation
+    repo: https://github.com/eZansiEdgeAI/ezansi-capability-llm-ollama.git
+    default_ref: main
+    start:
+      kind: choose-compose
+      script: scripts/choose-compose.sh
+      args:
+        # Canonical runner profiles -> repo-specific device profile names.
+        device_map:
+          rpi4-8g: raspberry-pi-4-8gb
+          rpi5-8g: raspberry-pi-5-8gb
+          rpi5-16g: raspberry-pi-5-16gb
+          amd64-24g: amd64-24gb
+          amd64-32g: amd64-32gb
+
+  - capability_id: chromadb-retrieval
+    types:
+      - vector-search
+      - text-embeddings
+    repo: https://github.com/eZansiEdgeAI/ezansi-capability-retrieval-chromadb.git
+    default_ref: main
+    start:
+      kind: choose-compose
+      script: scripts/choose-compose.sh
+      args:
+        # Canonical runner profiles -> repo-specific coarse profiles.
+        profile_map:
+          rpi4-8g: pi4
+          rpi5-8g: pi5
+          rpi5-16g: pi5
+          amd64-24g: amd64
+          amd64-32g: amd64
+      build_recommended: true
