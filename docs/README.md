@@ -10,7 +10,7 @@ If you’re a teacher/lecturer or student, think of the system like LEGO:
 - **`capability.json` = the studs** (what each brick provides)
 - **Platform Core = the baseplate/gateway** (discovers bricks and routes requests)
 
-Start with the cold-start walkthrough: [tests/TEST_GUIDE.md](../tests/TEST_GUIDE.md)
+Start with the cold-start walkthrough: [docs/cold-start-walkthrough.md](cold-start-walkthrough.md)
 
 ## Quick links
 
