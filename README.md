@@ -65,6 +65,12 @@ To run a real end-to-end flow (capabilities + platform-core gateway), follow:
 
 - [tests/TEST_GUIDE.md](tests/TEST_GUIDE.md)
 
+## Blueprint-driven cold start (recommended)
+
+To go from a blueprint (pattern) to a running stack (capabilities + gateway) with minimal manual setup, use the external Blueprint Runner:
+
+- Docs: [docs/blueprint-runner.md](docs/blueprint-runner.md)
+
 That guide includes:
 
 - cold start (build/pull images)

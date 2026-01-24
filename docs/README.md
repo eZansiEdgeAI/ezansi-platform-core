@@ -21,3 +21,8 @@ Start with the cold-start walkthrough: [tests/TEST_GUIDE.md](../tests/TEST_GUIDE
 - [Request router](request-router.md)
 - [Resource validator](resource-validator.md)
 - [Stack composition (blueprints)](stack-composition.md)
+- [Blueprint runner (clone + start)](blueprint-runner.md)
+
+## Decisions
+
+- [ADR 0001: Blueprint Clone + Start Runner](decisions/0001-blueprint-runner.md)

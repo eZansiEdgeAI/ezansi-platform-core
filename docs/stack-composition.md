@@ -22,6 +22,17 @@ Blueprints are intentionally kept **outside** platform-core so different stacks 
 
 In this workspace, blueprints live in the separate repository `ezansi-blueprints`.
 
+## From blueprint to running stack
+
+Blueprints are *not* deployment files. To automate the common “clone repos + choose RAM tier + start containers” workflow, use the external Blueprint Runner:
+
+- [Blueprint runner (clone + start)](blueprint-runner.md)
+
+Blueprints may include optional orchestration hints (that do not affect platform-core routing):
+
+- `capability_hints`: map type -> stable capability ID (contract `name`) to disambiguate providers
+- `target_device.profile`: a profile hint such as `auto`, `rpi5-16g`, `amd64-24g`
+
 ## Advisor / intent layer
 
 An optional external advisor can translate free-text goals into blueprint requirements:
