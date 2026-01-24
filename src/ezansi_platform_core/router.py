@@ -124,7 +124,14 @@ class RequestRouter:
             json_body = {k: v for k, v in request_body.items() if k != "type"}
 
         async with httpx.AsyncClient(timeout=self._timeout) as client:
-            r = await client.request(method, url, json=json_body)
+            try:
+                r = await client.request(method, url, json=json_body)
+            except Exception as e:  # noqa: BLE001
+                raise RoutingError(
+                    "UNREACHABLE",
+                    "Capability request failed",
+                    {"error": str(e), "url": url, "method": method},
+                )
 
         data: Any
         try:

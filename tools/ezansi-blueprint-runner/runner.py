@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 import shutil
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -159,7 +161,14 @@ def _http_ok(url: str, timeout_s: float = 2.5) -> bool:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             return 200 <= int(resp.status) < 300
-    except (urllib.error.URLError, ValueError):
+    except (
+        urllib.error.HTTPError,
+        urllib.error.URLError,
+        http.client.HTTPException,
+        TimeoutError,
+        OSError,
+        ValueError,
+    ):
         return False
 
 
@@ -180,10 +189,18 @@ def _start_platform_core_if_needed(
         cmd.append("--build")
     _run(cmd, cwd=platform_core_dir)
 
-    if not _http_ok(health_url, timeout_s=6.0):
-        _die(f"platform-core did not become healthy at {health_url}")
+    # Platform-core may briefly reset connections while the service boots.
+    deadline = time.monotonic() + 45.0
+    while time.monotonic() < deadline:
+        if _http_ok(health_url, timeout_s=2.5):
+            return {"url": platform_url, "action": "started", "build": build}
+        time.sleep(0.5)
 
-    return {"url": platform_url, "action": "started", "build": build}
+    _die(
+        f"platform-core did not become healthy at {health_url}. "
+        "Try: podman-compose ps && podman-compose logs --tail=200"
+    )
+
 
 
 def _podman_container_names(running_only: bool) -> List[str]:
