@@ -6,6 +6,8 @@
 
 In practice, platform-core is what experience layers talk to; experience layers do not call capabilities directly.
 
+Blueprints (stack patterns) live outside this repo, and they are *not* deployment files. To reduce “cold start” friction (clone repos, choose device/RAM tier, start containers), this repo includes optional external tooling (Blueprint Runner) that can bring up a runnable stack while keeping the platform-core runtime unchanged.
+
 ## Architecture
 
 The runnable implementation is a minimal FastAPI gateway plus a few focused modules:
@@ -15,7 +17,9 @@ The runnable implementation is a minimal FastAPI gateway plus a few focused modu
 - **Router**: type-based routing with capability health checks and request forwarding using `httpx`.
 - **Validator**: resource validation for “can this stack run here?” using a device constraints file.
 - **Overrides**: config-driven endpoint rewrites (useful when capability contracts use `localhost` but the platform container needs `host.containers.internal`, etc.).
-- **External tooling**: an optional advisor CLI/container that reads blueprints and prints runnable calls (kept outside the platform runtime).
+- **External tooling** (kept outside the platform runtime):
+  - **Blueprint Runner**: turns a blueprint into a running stack using an approved capability catalog (clone/update repos, choose a device/RAM profile, start capability compose presets, optionally start platform-core).
+  - **Advisor**: reads a blueprint and prints runnable calls (curl/bash) that execute the blueprint flow through platform-core.
 
 High-level request path:
 
@@ -57,13 +61,26 @@ High-level request path:
   - Checks platform registry + health.
   - Prints runnable `curl` steps or a single bash runner to execute the flow.
 
+- **Blueprint Runner (external helper)** ([tools/ezansi-blueprint-runner/runner.py](tools/ezansi-blueprint-runner/runner.py))
+  - Resolves `requires_types` to approved capabilities using a catalog.
+  - Clones/updates capability repos into a project-local runs directory (`./.ezansi-runs/<run-id>`).
+  - Selects a device/RAM profile (auto-detect by default) and starts capabilities via repo-native selector scripts.
+  - Supports `apply`, `status`, and `destroy`.
+
+- **Approved capability catalog (orchestration)** ([capabilities/catalog.yml](capabilities/catalog.yml))
+  - Defines which capabilities are runnable by orchestration tools and how to start them.
+  - Maps service types → stable capability IDs → repo URLs + start strategy.
+
+- **Decision record** ([docs/decisions/0001-blueprint-runner.md](docs/decisions/0001-blueprint-runner.md))
+  - Captures the rationale and constraints behind the catalog-driven runner approach.
+
 ## Technologies Used
 
 - **Python**
 - **FastAPI** (gateway)
 - **httpx** (HTTP client for routing + health checks)
 - **Pydantic** (request schema)
-- **YAML** (overrides, blueprints in external repo)
+- **YAML** (overrides; approved capability catalog consumed by external tooling; blueprints live in an external repo)
 - **Podman / podman-compose** (runtime orchestration for local demos)
 
 ## Data Flow
@@ -88,6 +105,15 @@ High-level request path:
 
 - The client (or advisor) calls `POST /validate/stack` with requested types.
 - The validator checks device constraints and returns `compatible`, plus details.
+
+### Orchestration (Blueprint Runner)
+
+This is optional external tooling (not part of the platform-core runtime request path):
+
+- Read a blueprint YAML and resolve required service types via the approved catalog.
+- Clone/update the required capability repos into `./.ezansi-runs/<run-id>/repos/`.
+- Choose a device/RAM profile (auto-detect by default) and start each capability using its repo-native compose selector script.
+- Persist run state so the stack can be inspected (`status`) and torn down (`destroy`).
 
 ## Team and Ownership
 

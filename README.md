@@ -81,24 +81,45 @@ That guide includes:
 
 ## Architecture at a glance
 
-```mermaid
-flowchart LR
-	U[You\n(curl / app)] -->|HTTP| G[Platform Core Gateway\nFastAPI :8000]
+```text
+			  +----------------------+
+			  |     You (curl/app)   |
+			  +----------+-----------+
+					 |
+					 | HTTP
+					 v
+			  +----------+-----------+
+			  | Platform Core Gateway|
+			  |   FastAPI :8000      |
+			  +----------+-----------+
+					 |
+					 | scans ./capabilities/**/capability.json
+					 v
+			  +----------+-----------+
+			  |  Capability Registry |
+			  |     (discovery)      |
+			  +----------+-----------+
+					 |
+					 | resolves provider by type
+					 v
+			  +----------+-----------+
+			  |     Request Router   |
+			  |        (proxy)       |
+			  +-----+-----------+----+
+				  |           |
+				  |           |
+				  v           v
+		  +-----------+--+   +----+-------------------+
+		  |   Ollama LLM  |   |  ChromaDB Retrieval   |
+		  |  capability   |   |      capability       |
+		  +--------------+   +-----------+------------+
+							     |
+							     v
+						   +-------+-------+
+						   |    ChromaDB    |
+						   +---------------+
 
-	C[Capability contracts\n./capabilities/**/capability.json] --> R[Capability Registry\n(discovery + catalog)]
-	G --> R
-	R --> RT[Request Router\n(select provider + proxy)]
-
-	RT -->|provider: llm| O[Ollama capability service]
-	RT -->|provider: retrieval| RC[ChromaDB Retrieval capability service]
-	RC --> CH[(ChromaDB)]
-
-	subgraph Podman / podman-compose
-		G
-		O
-		RC
-		CH
-	end
+All services typically run under Podman / podman-compose.
 ```
 
 In practice:

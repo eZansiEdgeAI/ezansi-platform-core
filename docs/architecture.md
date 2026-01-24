@@ -4,32 +4,53 @@ This document describes the platform-core architecture: discovery, validation, a
 
 ## Components
 
-- **[Capability registry](capability-registry.md)** — auto-discovers and catalogs capabilities
+- **[Capability registry](capability-registry.md)** — auto-discovers and indexes capabilities
 - **[Request router](request-router.md)** — routes requests to the selected capability
 - **[Resource validator](resource-validator.md)** — validates device constraints
 - **[API gateway](api-gateway.md)** — single entry point for all requests
 - **[Stack composition](stack-composition.md)** — how stacks compose capabilities via platform-core
 
-## Architecture diagram (Mermaid)
+## Architecture diagram
 
-```mermaid
-flowchart LR
-    U[Client\n(curl / app)] -->|HTTP| G[API Gateway\nFastAPI :8000]
+```text
+                    +----------------------+
+                    |  Client (curl / app) |
+                    +----------+-----------+
+                               |
+                               | HTTP
+                               v
+                    +----------+-----------+
+                    |      API Gateway     |
+                    |    FastAPI :8000     |
+                    +----------+-----------+
+                               |
+                               | reads ./capabilities/**/capability.json
+                               v
+                    +----------+-----------+
+                    |  Capability Registry |
+                    |     (discovery)      |
+                    +----------+-----------+
+                               |
+                               | routes by service type
+                               v
+                    +----------+-----------+
+                    |     Request Router   |
+                    |   (select + proxy)   |
+                    +-----+-----------+----+
+                          |           |
+                          |           |
+                          v           v
+              +-----------+--+   +----+-------------------+
+              |   Ollama LLM  |   |  ChromaDB Retrieval   |
+              |  capability   |   |      capability       |
+              +--------------+   +-----------+------------+
+                                               |
+                                               v
+                                       +-------+-------+
+                                       |    ChromaDB    |
+                                       +---------------+
 
-    C[Capability contracts\n./capabilities/**/capability.json] --> R[Capability Registry\n(discovery + catalog)]
-    G --> R
-    R --> RT[Request Router\n(select provider + proxy)]
-
-    RT -->|provider: llm| O[Ollama capability]
-    RT -->|provider: retrieval| RC[ChromaDB Retrieval capability]
-    RC --> CH[(ChromaDB)]
-
-    subgraph Podman / podman-compose
-        G
-        O
-        RC
-        CH
-    end
+All services typically run under Podman / podman-compose.
 ```
 
 ## High-level flow
