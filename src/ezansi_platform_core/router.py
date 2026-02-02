@@ -21,6 +21,8 @@ class RouteResult:
     provider: str
     status_code: int
     data: Any
+    content_type: str
+    is_binary: bool
     latency_ms: int
 
 
@@ -133,13 +135,34 @@ class RequestRouter:
                     {"error": str(e), "url": url, "method": method},
                 )
 
-        data: Any
-        try:
-            data = r.json()
-        except Exception:  # noqa: BLE001
-            data = {"text": _safe_text(r)}
+        content_type = str(r.headers.get("content-type", ""))
 
-        return RouteResult(provider=record.contract.name, status_code=r.status_code, data=data, latency_ms=0)
+        # For non-JSON responses (e.g., audio/wav), preserve raw bytes so the
+        # gateway can proxy them directly when appropriate.
+        is_json = content_type.startswith("application/json") or content_type.endswith("+json")
+        if is_json:
+            data: Any
+            try:
+                data = r.json()
+            except Exception:  # noqa: BLE001
+                data = {"text": _safe_text(r)}
+            return RouteResult(
+                provider=record.contract.name,
+                status_code=r.status_code,
+                data=data,
+                content_type=content_type,
+                is_binary=False,
+                latency_ms=0,
+            )
+
+        return RouteResult(
+            provider=record.contract.name,
+            status_code=r.status_code,
+            data=r.content,
+            content_type=content_type,
+            is_binary=True,
+            latency_ms=0,
+        )
 
 
 def _safe_text(response: httpx.Response) -> str:

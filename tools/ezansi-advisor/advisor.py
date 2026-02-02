@@ -67,6 +67,17 @@ def _render_curl(platform_base_url: str, request_body: Mapping[str, Any]) -> str
     ).format(base=platform_base_url.rstrip("/"), body=body)
 
 
+def _render_curl_to_file(platform_base_url: str, request_body: Mapping[str, Any], output_file: str) -> str:
+    # Use a heredoc to avoid shell-escaping JSON and write binary responses to a file.
+    body = json.dumps(request_body, indent=2)
+    return (
+        "curl -sS -X POST \"{base}/\" -H 'Content-Type: application/json' --data-binary @- -o {out} <<'JSON'\n"
+        "{body}\n"
+        "JSON\n"
+        "echo 'Wrote: {out}'\n"
+    ).format(base=platform_base_url.rstrip("/"), body=body, out=output_file)
+
+
 def _contains_placeholder(value: Any, placeholder: str) -> bool:
     if isinstance(value, str):
         return placeholder in value
@@ -117,6 +128,49 @@ def _render_runner_step_with_placeholder_substitution(
     )
 
 
+def _render_runner_step_with_env_substitution(
+    platform_base_url: str,
+    request_body: Mapping[str, Any],
+    substitutions: Mapping[str, str],
+    output_file: Optional[str] = None,
+) -> str:
+    # Use Python so we don't have to do fragile shell JSON-escaping.
+    body = json.dumps(request_body, indent=2)
+    base = platform_base_url.rstrip("/")
+    return (
+        "python3 - <<'PY'\n"
+        "import json, os, subprocess\n"
+        f"base = {base!r}\n"
+        f"substitutions = {dict(substitutions)!r}\n"
+        f"output_file = {output_file!r}\n"
+        f"body = json.loads({body!r})\n"
+        "\n"
+        "def repl(x):\n"
+        "    if isinstance(x, str):\n"
+        "        for placeholder, env_var in substitutions.items():\n"
+        "            x = x.replace(placeholder, os.environ.get(env_var, ''))\n"
+        "        return x\n"
+        "    if isinstance(x, list):\n"
+        "        return [repl(v) for v in x]\n"
+        "    if isinstance(x, dict):\n"
+        "        return {k: repl(v) for k, v in x.items()}\n"
+        "    return x\n"
+        "\n"
+        "body = repl(body)\n"
+        "cmd = ['curl', '-sS', '-X', 'POST', f'{base}/', '-H', 'Content-Type: application/json', '--data-binary', '@-']\n"
+        "if output_file:\n"
+        "    cmd += ['-o', output_file]\n"
+        "subprocess.run(\n"
+        "    cmd,\n"
+        "    input=(json.dumps(body) + '\\n').encode('utf-8'),\n"
+        "    check=True,\n"
+        ")\n"
+        "if output_file:\n"
+        "    print(f'Wrote: {output_file}')\n"
+        "PY\n"
+    )
+
+
 def _render_runner_script(platform_base_url: str, blueprint: Mapping[str, Any], variables: Mapping[str, Any]) -> str:
     steps = _flow_steps(blueprint)
     base = platform_base_url.rstrip("/")
@@ -130,6 +184,7 @@ def _render_runner_script(platform_base_url: str, blueprint: Mapping[str, Any], 
     lines.append("")
     lines.append("# This runner executes the blueprint flow through platform-core.")
     lines.append("# It captures retrieval output and substitutes {retrieved_context} automatically.")
+    lines.append("# It also captures LLM output and substitutes {answer_text} automatically.")
     lines.append("")
 
     for step in steps:
@@ -151,10 +206,13 @@ def _render_runner_script(platform_base_url: str, blueprint: Mapping[str, Any], 
             lines.append(f"echo {desc!r}")
 
         is_retrieve = False
+        is_answer = False
+        is_tts = request_body.get("type") == "text-to-speech"
         payload = request_body.get("payload")
         if isinstance(payload, dict):
             endpoint_name = payload.get("endpoint")
             is_retrieve = endpoint_name in {"query", "search", "retrieve"} or step_id in {"retrieve", "search"}
+            is_answer = endpoint_name in {"generate", "completion", "chat"} or step_id in {"answer", "generate"}
 
         if is_retrieve:
             # Capture the retrieval response.
@@ -203,10 +261,79 @@ def _render_runner_script(platform_base_url: str, blueprint: Mapping[str, Any], 
             lines.append("")
             continue
 
+        if is_answer:
+            # Capture the LLM response and extract answer text for {answer_text}.
+            body = json.dumps(request_body, indent=2)
+            lines.append(
+                "answer_json=$(curl -sS -X POST \"${PLATFORM}/\" -H 'Content-Type: application/json' --data-binary @- <<'JSON'\n"
+                + body
+                + "\nJSON\n)"
+            )
+            lines.append("echo \"$answer_json\" | head -c 1200")
+            lines.append(
+                "answer_text=$(ANSWER_JSON=\"$answer_json\" python3 - <<'PY'\n"
+                "import json, os\n"
+                "\n"
+                "raw = os.environ.get('ANSWER_JSON', '')\n"
+                "j = json.loads(raw)\n"
+                "root = j if isinstance(j, dict) else {}\n"
+                "data = root.get('data') if isinstance(root.get('data'), (dict, list, str)) else root\n"
+                "\n"
+                "def first_str(d, keys):\n"
+                "    if not isinstance(d, dict):\n"
+                "        return None\n"
+                "    for k in keys:\n"
+                "        v = d.get(k)\n"
+                "        if isinstance(v, str) and v.strip():\n"
+                "            return v.strip()\n"
+                "    return None\n"
+                "\n"
+                "# Common shapes\n"
+                "if isinstance(data, str):\n"
+                "    print(data.strip())\n"
+                "    raise SystemExit(0)\n"
+                "\n"
+                "if isinstance(data, dict):\n"
+                "    s = first_str(data, ('response', 'text', 'output', 'content'))\n"
+                "    if s:\n"
+                "        print(s)\n"
+                "        raise SystemExit(0)\n"
+                "\n"
+                "    # OpenAI-style: choices[0].message.content\n"
+                "    choices = data.get('choices')\n"
+                "    if isinstance(choices, list) and choices:\n"
+                "        c0 = choices[0] if isinstance(choices[0], dict) else {}\n"
+                "        msg = c0.get('message') if isinstance(c0.get('message'), dict) else {}\n"
+                "        mc = msg.get('content')\n"
+                "        if isinstance(mc, str) and mc.strip():\n"
+                "            print(mc.strip())\n"
+                "            raise SystemExit(0)\n"
+                "\n"
+                "# Fallback: nothing found\n"
+                "print('')\n"
+                "PY\n"
+                ")"
+            )
+            lines.append("export answer_text")
+            lines.append("")
+            continue
+
+        substitutions: Dict[str, str] = {}
         if _contains_placeholder(request_body, "{retrieved_context}"):
-            lines.append(_render_runner_step_with_placeholder_substitution(base, request_body, "{retrieved_context}", "retrieved_context").rstrip("\n"))
+            substitutions["{retrieved_context}"] = "retrieved_context"
+        if _contains_placeholder(request_body, "{answer_text}"):
+            substitutions["{answer_text}"] = "answer_text"
+
+        if substitutions:
+            out_file = None
+            if is_tts:
+                out_file = f"{step_id or 'tts'}.wav"
+            lines.append(_render_runner_step_with_env_substitution(base, request_body, substitutions, output_file=out_file).rstrip("\n"))
         else:
-            lines.append(_render_runner_step_with_curl(base, request_body).rstrip("\n"))
+            if is_tts:
+                lines.append(_render_curl_to_file(base, request_body, f"{step_id or 'tts'}.wav").rstrip("\n"))
+            else:
+                lines.append(_render_runner_step_with_curl(base, request_body).rstrip("\n"))
         lines.append("")
 
     return "\n".join(lines) + "\n"
@@ -348,7 +475,12 @@ def main() -> None:
                 print(f"\n# step: {step_id}")
             if desc:
                 print(f"# {desc}")
-            print(_render_curl(args.platform.rstrip("/"), request_body))
+
+            if request_body.get("type") == "text-to-speech":
+                out_file = f"{step_id or 'tts'}.wav"
+                print(_render_curl_to_file(args.platform.rstrip("/"), request_body, out_file))
+            else:
+                print(_render_curl(args.platform.rstrip("/"), request_body))
 
     if args.print_runner:
         script = _render_runner_script(args.platform.rstrip("/"), blueprint, variables)

@@ -26,3 +26,4 @@ Start with the cold-start walkthrough: [docs/cold-start-walkthrough.md](cold-sta
 ## Decisions
 
 - [ADR 0001: Blueprint Clone + Start Runner](decisions/0001-blueprint-runner.md)
+- [ADR 0002: Proxy Non-JSON Capability Responses (TTS Audio)](decisions/0002-proxy-non-json-responses-and-tts-audio.md)
