@@ -353,8 +353,112 @@ def _start_capability_from_repo(
     script_rel = str(start.get("script", "")).strip()
     args = start.get("args") if isinstance(start.get("args"), dict) else {}
 
-    if kind != "choose-compose":
+    if kind not in {"choose-compose", "compose"}:
         _die(f"Unsupported start.kind '{kind}' for {capability_id}")
+
+    def _ensure_no_container_name_conflicts(compose_files: List[Path]) -> List[str]:
+        declared = _compose_declared_container_names(compose_files)
+        if not declared:
+            return []
+
+        running = set(_podman_container_names(running_only=True))
+        allc = set(_podman_container_names(running_only=False))
+
+        if all(name in running for name in declared):
+            print(
+                f"Warning: {capability_id} containers already running ({', '.join(declared)}); skipping start",
+                file=sys.stderr,
+            )
+            return declared
+
+        if any(name in allc for name in declared):
+            _die(
+                f"{capability_id} has existing containers with fixed names ({', '.join(declared)}). "
+                "Stop/remove them first, or use the same running stack."
+            )
+
+        return declared
+
+    def _maybe_run_preflight() -> Optional[Dict[str, Any]]:
+        preflight = start.get("preflight")
+        if not isinstance(preflight, dict):
+            return None
+
+        script = str(preflight.get("script", "")).strip()
+        if not script:
+            return None
+
+        optional = bool(preflight.get("optional", False))
+        pf_args = preflight.get("args")
+        if not isinstance(pf_args, list):
+            pf_args = []
+
+        script_path = repo_dir / script
+        if not script_path.exists():
+            msg = f"Missing preflight script for {capability_id}: {script}"
+            if optional:
+                print("Warning: " + msg, file=sys.stderr)
+                return {"script": script, "optional": True, "status": "missing"}
+            _die(msg)
+
+        cmd = ["bash", str(script_path)] + [str(x) for x in pf_args]
+        try:
+            _run(cmd, cwd=repo_dir)
+            return {"script": script, "optional": optional, "status": "ok"}
+        except subprocess.CalledProcessError as e:
+            if optional:
+                print(
+                    f"Warning: preflight script failed for {capability_id} ({script}): exit {e.returncode}",
+                    file=sys.stderr,
+                )
+                return {"script": script, "optional": True, "status": "failed", "exit_code": e.returncode}
+            raise
+
+    if kind == "compose":
+        preflight_info = _maybe_run_preflight()
+
+        compose_rel = start.get("compose_files")
+        if compose_rel is None:
+            compose_rel = ["podman-compose.yml"]
+
+        if not isinstance(compose_rel, list) or not compose_rel:
+            _die(f"Catalog start.compose_files for {capability_id} must be a non-empty list")
+
+        compose_files: List[Path] = []
+        for rel in compose_rel:
+            if not isinstance(rel, str) or not rel.strip():
+                _die(f"Catalog start.compose_files for {capability_id} contains a non-string entry")
+            p = repo_dir / rel.strip()
+            if not p.exists():
+                _die(f"Missing compose file for {capability_id}: {rel}")
+            compose_files.append(p)
+
+        declared = _ensure_no_container_name_conflicts(compose_files)
+        if declared and all(name in set(_podman_container_names(running_only=True)) for name in declared):
+            return {
+                "kind": "existing-containers",
+                "files": [str(p) for p in compose_files],
+                "project": run_project,
+                "container_names": declared,
+                "preflight": preflight_info,
+            }
+
+        up_cmd = ["podman-compose", "-p", run_project]
+        for f in compose_files:
+            up_cmd += ["-f", str(f)]
+        up_cmd += ["up", "-d"]
+        if build:
+            up_cmd.append("--build")
+
+        _run(up_cmd, cwd=repo_dir)
+        return {
+            "kind": "podman-compose",
+            "files": [str(p) for p in compose_files],
+            "project": run_project,
+            "build": build,
+            "container_names": declared,
+            "preflight": preflight_info,
+        }
 
     script_path = repo_dir / script_rel
     if not script_path.exists():

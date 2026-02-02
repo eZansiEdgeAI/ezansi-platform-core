@@ -46,3 +46,22 @@ capabilities:
           amd64-24g: amd64
           amd64-32g: amd64
       build_recommended: true
+
+  - capability_id: piper-tts
+    types:
+      - text-to-speech
+    repo: https://github.com/eZansiEdgeAI/ezansi-capability-tts-piper.git
+    default_ref: main
+    start:
+      # This capability uses a single compose file and runtime detection.
+      # A preflight script can generate a .env with resource hints, but startup
+      # should still work without it.
+      kind: compose
+      compose_files:
+        - podman-compose.yml
+      preflight:
+        script: scripts/configure-hardware.sh
+        args: []
+        optional: true
+      args:
+        build_recommended: true

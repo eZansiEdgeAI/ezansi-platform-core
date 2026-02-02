@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, List, Mapping, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from . import __version__
@@ -154,7 +154,7 @@ def create_app(settings: Settings) -> FastAPI:
         }
 
     @app.post("/")
-    async def execute(req: ExecuteRequest) -> Mapping[str, Any]:
+    async def execute(req: ExecuteRequest) -> Any:
         record = registry.resolve_provider(req.type)
         if record is None:
             available_types = sorted({p for c in registry.list_capabilities() for p in c.contract.provides})
@@ -181,10 +181,17 @@ def create_app(settings: Settings) -> FastAPI:
                 detail={"status": "error", "type": req.type, "error": e.message, "code": e.code, **e.details},
             )
 
+        # Some capability endpoints return non-JSON (e.g., audio/wav for TTS).
+        # Proxy those responses directly so clients can `curl -o out.wav`.
+        if req.type == "text-to-speech" and result.is_binary and result.status_code < 400:
+            media_type = result.content_type or "application/octet-stream"
+            headers = {"Content-Disposition": "attachment; filename=tts.wav"}
+            return Response(content=result.data, media_type=media_type, headers=headers)
+
         return {
             "status": "success" if result.status_code < 400 else "error",
             "type": req.type,
-            "data": result.data,
+            "data": result.data if not result.is_binary else {"content_type": result.content_type, "text": "<binary>"},
             "metadata": {"provider": result.provider, "latency_ms": latency_ms},
         }
 
