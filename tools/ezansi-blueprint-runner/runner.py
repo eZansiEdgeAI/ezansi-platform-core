@@ -53,6 +53,12 @@ def _capture(cmd: List[str], cwd: Optional[Path] = None) -> str:
     return p.stdout.strip()
 
 
+def _podman_rm_force(names: List[str]) -> None:
+    if not names:
+        return
+    subprocess.run(["podman", "rm", "-f", *names], check=True)
+
+
 def _load_yaml(path: Path) -> Mapping[str, Any]:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -176,6 +182,7 @@ def _start_platform_core_if_needed(
     platform_core_dir: Path,
     platform_url: str,
     build: bool,
+    replace_existing_containers: bool,
 ) -> Dict[str, Any]:
     health_url = platform_url.rstrip("/") + "/health"
     if _http_ok(health_url):
@@ -183,6 +190,42 @@ def _start_platform_core_if_needed(
 
     if not (platform_core_dir / "podman-compose.yml").exists():
         _die(f"platform-core podman-compose.yml not found under: {platform_core_dir}")
+
+    # If platform-core uses a fixed container_name, avoid trying to recreate it.
+    # - If the container is already running, wait briefly for /health instead of failing with a name collision.
+    # - If the container exists but is stopped, either remove it (if --replace-existing-containers) or fail with instructions.
+    compose_files = [platform_core_dir / "podman-compose.yml"]
+    declared = _compose_declared_container_names(compose_files)
+    if declared:
+        running = set(_podman_container_names(running_only=True))
+        allc = set(_podman_container_names(running_only=False))
+
+        if all(name in running for name in declared):
+            # Running but not yet healthy (or health URL not reachable); wait before taking destructive action.
+            deadline = time.monotonic() + 45.0
+            while time.monotonic() < deadline:
+                if _http_ok(health_url, timeout_s=2.5):
+                    return {"url": platform_url, "action": "already-running"}
+                time.sleep(0.5)
+
+            _die(
+                f"platform-core containers are running ({', '.join(declared)}) but {health_url} is not healthy. "
+                "Try: podman logs ezansi-platform-core --tail=200"
+            )
+
+        if any(name in allc for name in declared):
+            existing = [n for n in declared if n in allc]
+            if replace_existing_containers:
+                print(
+                    f"Warning: removing existing platform-core containers ({', '.join(existing)}) due to --replace-existing-containers",
+                    file=sys.stderr,
+                )
+                _podman_rm_force(existing)
+            else:
+                _die(
+                    f"platform-core has existing containers with fixed names ({', '.join(existing)}). "
+                    "Stop/remove them first, or re-run with --replace-existing-containers."
+                )
 
     cmd = ["podman-compose", "up", "-d"]
     if build:
@@ -344,6 +387,7 @@ def _start_capability_from_repo(
     catalog_entry: Mapping[str, Any],
     run_project: str,
     build: bool,
+    replace_existing_containers: bool,
 ) -> Dict[str, Any]:
     start = catalog_entry.get("start")
     if not isinstance(start, dict):
@@ -372,10 +416,18 @@ def _start_capability_from_repo(
             return declared
 
         if any(name in allc for name in declared):
-            _die(
-                f"{capability_id} has existing containers with fixed names ({', '.join(declared)}). "
-                "Stop/remove them first, or use the same running stack."
-            )
+            existing = [n for n in declared if n in allc]
+            if replace_existing_containers:
+                print(
+                    f"Warning: removing existing containers for {capability_id} ({', '.join(existing)}) due to --replace-existing-containers",
+                    file=sys.stderr,
+                )
+                _podman_rm_force(existing)
+            else:
+                _die(
+                    f"{capability_id} has existing containers with fixed names ({', '.join(declared)}). "
+                    "Stop/remove them first, use the same running stack, or re-run with --replace-existing-containers."
+                )
 
         return declared
 
@@ -499,10 +551,18 @@ def _start_capability_from_repo(
                     "container_names": declared,
                 }
             if any(name in allc for name in declared):
-                _die(
-                    f"{capability_id} has existing containers with fixed names ({', '.join(declared)}). "
-                    "Stop/remove them first, or use the same running stack."
-                )
+                existing = [n for n in declared if n in allc]
+                if replace_existing_containers:
+                    print(
+                        f"Warning: removing existing containers for {capability_id} ({', '.join(existing)}) due to --replace-existing-containers",
+                        file=sys.stderr,
+                    )
+                    _podman_rm_force(existing)
+                else:
+                    _die(
+                        f"{capability_id} has existing containers with fixed names ({', '.join(declared)}). "
+                        "Stop/remove them first, use the same running stack, or re-run with --replace-existing-containers."
+                    )
 
         up_cmd = ["podman-compose", "-p", run_project, "-f", str(compose_file), "up", "-d"]
         if build:
@@ -549,10 +609,18 @@ def _start_capability_from_repo(
                     "container_names": declared,
                 }
             if any(name in allc for name in declared):
-                _die(
-                    f"{capability_id} has existing containers with fixed names ({', '.join(declared)}). "
-                    "Stop/remove them first, or use the same running stack."
-                )
+                existing = [n for n in declared if n in allc]
+                if replace_existing_containers:
+                    print(
+                        f"Warning: removing existing containers for {capability_id} ({', '.join(existing)}) due to --replace-existing-containers",
+                        file=sys.stderr,
+                    )
+                    _podman_rm_force(existing)
+                else:
+                    _die(
+                        f"{capability_id} has existing containers with fixed names ({', '.join(declared)}). "
+                        "Stop/remove them first, use the same running stack, or re-run with --replace-existing-containers."
+                    )
 
         up_cmd = [
             "podman-compose",
@@ -616,6 +684,7 @@ def cmd_apply(args: argparse.Namespace) -> None:
             platform_core_dir=Path(args.platform_core_dir).expanduser().resolve(),
             platform_url=args.platform_url,
             build=bool(args.platform_build),
+            replace_existing_containers=bool(args.replace_existing_containers),
         )
 
     run_id = args.run_id or _default_run_id(blueprint)
@@ -664,6 +733,7 @@ def cmd_apply(args: argparse.Namespace) -> None:
             catalog_entry=entry,
             run_project=project,
             build=do_build,
+            replace_existing_containers=bool(args.replace_existing_containers),
         )
 
         started.append(
@@ -805,6 +875,15 @@ def main() -> None:
         "--platform-build",
         action="store_true",
         help="Use --build when starting platform-core",
+    )
+
+    p_apply.add_argument(
+        "--replace-existing-containers",
+        action="store_true",
+        help=(
+            "If a capability (or platform-core) uses fixed container_name values and those containers already exist, "
+            "remove them with 'podman rm -f' before starting. Use with care."
+        ),
     )
 
     build_group = p_apply.add_mutually_exclusive_group()

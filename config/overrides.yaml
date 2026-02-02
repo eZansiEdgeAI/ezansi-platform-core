@@ -17,6 +17,10 @@ capabilities:
     endpoint: http://host.containers.internal:8801
     health_check: /health
 
+  piper-tts:
+    endpoint: http://host.containers.internal:10200
+    health_check: /health
+
 provides_aliases:
   # Normalize older/alternate names to the standard taxonomy.
   # Example: chromadb-retrieval advertises `text-embeddings` today.

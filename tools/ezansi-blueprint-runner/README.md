@@ -25,6 +25,13 @@ python3 tools/ezansi-blueprint-runner/runner.py apply \
   --blueprint /path/to/ezansi-blueprints/blueprints/student-knowledge-rag.yml \
   --start-platform-core
 
+# If you hit container-name collisions (some capability repos use fixed container_name values)
+# you can force-remove those existing containers before starting.
+python3 tools/ezansi-blueprint-runner/runner.py apply \
+  --blueprint /path/to/ezansi-blueprints/blueprints/student-knowledge-rag.yml \
+  --start-platform-core \
+  --replace-existing-containers
+
 # Strict mode (fail fast if requested profile is too large)
 python3 tools/ezansi-blueprint-runner/runner.py apply \
   --blueprint /path/to/ezansi-blueprints/blueprints/student-knowledge-rag.yml \

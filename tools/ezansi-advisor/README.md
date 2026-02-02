@@ -20,6 +20,22 @@ make build TAG=0.1.2
 
 ## Run
 
+### Run (local Python)
+
+If you want to run the advisor directly with your system Python (instead of the container), install its dependencies once:
+
+```bash
+python3 -m pip install --user -r tools/ezansi-advisor/requirements.txt
+```
+
+Then:
+
+```bash
+python3 tools/ezansi-advisor/advisor.py --help
+```
+
+### Run (container)
+
 ```bash
 # One-time (or if you don't already have the blueprints repo locally)
 git clone https://github.com/eZansiEdgeAI/ezansi-blueprints.git

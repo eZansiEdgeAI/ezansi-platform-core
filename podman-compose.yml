@@ -14,10 +14,13 @@ services:
       OVERRIDES_PATH: "/app/config/overrides.yaml"
       CACHE_TTL_SECONDS: "10"
       STRICT_MODE: "true"
-      HTTP_TIMEOUT_SECONDS: "30"
+      # Raspberry Pi / CPU-only inference can take several minutes for generation.
+      HTTP_TIMEOUT_SECONDS: "300"
     volumes:
       # Mount capability contracts here. For demo usage, mount a folder that contains
       # subfolders with capability.json files.
       - ./capabilities:/capabilities:ro
+      # Mount config so overrides/constraints can be edited without rebuilding.
+      - ./config:/app/config:ro
     ports:
       - "8000:8000"
